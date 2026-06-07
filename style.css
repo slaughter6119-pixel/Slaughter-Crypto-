@@ -9,44 +9,62 @@ body {
   align-items: center;
 }
 
-#header {
-  color: #FF1493; /* Neon Pink */
-  text-align: center;
-  width: 100%;
-  max-width: 320px; /* Locks width */
-  margin-top: 20px;
-}
-
 #app-container {
   width: 100%;
   max-width: 320px; /* Forces tabs/text to not exceed header width */
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 40px;
 }
 
-.sc-icon {
-  background-color: black;
-  color: #FF5F1F; /* Neon Orange */
-  border: 1px solid white; /* Thin white border */
-  padding: 15px;
+#welcome-text {
+  color: #FF1493; /* Neon Pink */
+  font-size: 24px;
   font-weight: bold;
-  font-size: 28px;
   text-align: center;
-  margin-top: 10px;
+}
+
+#main-header {
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
   margin-bottom: 20px;
 }
 
 .tab {
   width: 100%;
+  border: 2px solid white;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 5px 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.ready-btn {
+  background-color: #FF5F1F; /* Neon Orange */
+  color: black;
+}
+
+.not-yet-btn {
+  background-color: #FF1493; /* Neon Pink */
+  color: black;
+}
+
+.sc-tab {
   background-color: black;
   color: #8A2BE2; /* Neon Purple */
-  border: 1px solid white;
-  padding: 12px;
-  margin: 8px 0;
+}
+
+#instructional-text {
+  font-size: 12px;
   text-align: center;
-  font-size: 18px;
-  cursor: pointer;
+  margin-top: 10px;
+  line-height: 1.4;
 }
 
 #footer {
@@ -54,9 +72,7 @@ body {
   bottom: 0;
   width: 100%;
   background-color: black;
-  color: white;
-  border-top: 1px solid white;
-  padding: 8px 0;
   font-size: 16px;
+  font-weight: bold;
+  padding-bottom: 10px;
 }
-
