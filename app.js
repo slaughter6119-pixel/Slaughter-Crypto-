@@ -31,10 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="tab" id="next-tab" style="background-color: #00FF00; color: black; border: 2px solid white; font-weight: bold;">Time</div>
         `;
 
-        // The logic to automatically format the 5-character time input with a colon
         const timeInput = document.getElementById("time-input");
         timeInput.addEventListener("input", function(e) {
-            let val = this.value.replace(/\D/g, ''); // Strip non-numbers
+            let val = this.value.replace(/\D/g, ''); 
             if (val.length > 2) {
                 val = val.substring(0, 2) + ':' + val.substring(2, 4);
             }
@@ -80,38 +79,46 @@ document.addEventListener("DOMContentLoaded", () => {
             <h2 style="color: #FF1493; text-align: center; margin-top: 0; margin-bottom: 20px;">Results</h2>
             
             <div style="width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                <div style="text-align: left; font-size: 14px; line-height: 1.4;">
+                
+                <!-- Left Column Data -->
+                <div style="text-align: left; font-size: 12px; line-height: 1.5; flex-grow: 1;">
                     <div><span style="color: #8A2BE2;">Reset time-</span> ${localStorage.getItem("resetTime")}</div>
                     <div><span style="color: #FF1493;">Investment entered-</span> $${inv.toFixed(2)}</div>
-                    <div><span style="color: #008000;">Profit expected-</span> $${profitExp}</div>
+                    <div><span style="color: #00FF00;">Profit expected-</span> $${profitExp}</div>
                     <br>
                     <div><span style="color: #FF1493;">Currency-</span> Determining...</div>
                     <div><span style="color: #8A2BE2;">Current-</span> Determining...</div>
                     <div><span style="color: #008080;">Buy-</span> Determining...</div>
-                    <div><span style="color: #008000;">Sell-</span> Determining...</div>
+                    <div><span style="color: #00FF00;">Sell-</span> Determining...</div>
+                    <br>
+                    <div><span style="color: #008080;">Todays-</span> Determining...</div>
+                    <div><span style="color: #8A2BE2;">Total-</span> Determining...</div>
+                </div>
+
+                <!-- Center Floating Accuracy Title -->
+                <div style="display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; font-weight: bold; font-size: 16px; color: #FF5F1F;">
+                    Accuracy
                 </div>
                 
-                <div style="text-align: right; font-size: 14px;">
+                <!-- Right Column Buttons -->
+                <div style="text-align: right; font-size: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; width: 140px;">
                     <div><span style="color: #8A2BE2;">Time until reset-</span> 2hrs 30min</div>
-                    <div class="tab" id="time-reset-tab" style="background-color: #CC0000; color: white; border: 1px solid white; margin-top: 5px; font-size: 14px; padding: 5px; cursor: pointer;">Time reset</div>
+                    <div class="tab" id="time-reset-tab" style="background-color: #CC0000; color: white; border: 1px solid white; font-size: 14px; padding: 5px; width: 100%; text-align: center; cursor: pointer; margin: 0;">Time reset</div>
+                    <div class="tab" id="money-reset-tab" style="background-color: #CC0000; color: white; border: 1px solid white; font-size: 14px; padding: 5px; width: 100%; text-align: center; cursor: pointer; margin: 0;">$$ Reset $$</div>
+                    <div class="tab" id="new-pick-tab" style="background-color: #CC0000; color: white; border: 1px solid white; font-size: 14px; padding: 5px; width: 100%; text-align: center; cursor: pointer; margin: 0;">New pick</div>
                 </div>
             </div>
-
-            <h2 style="color: #FF5F1F; text-align: center; margin-top: 20px;">Accuracy</h2>
-            <div style="text-align: left; font-size: 14px; width: 100%; line-height: 1.4;">
-                <div><span style="color: #A9A9A9;">Todays-</span> Determining...</div>
-                <div><span style="color: #8A2BE2;">Total-</span> Determining...</div>
-            </div>
-            
-            <div class="tab sc-tab" id="money-reset-tab" style="margin-top: 30px;">$$ Reset $$</div>
         `;
 
         document.getElementById("money-reset-tab").addEventListener("click", () => renderMoneyPage());
         
         document.getElementById("time-reset-tab").addEventListener("click", () => {
             localStorage.clear();
-            alert("Historical arrays completely purged.");
             renderHomePage();
+        });
+
+        document.getElementById("new-pick-tab").addEventListener("click", () => {
+            alert("New pick logic coming soon!");
         });
     }
 });
