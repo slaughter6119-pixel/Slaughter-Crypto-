@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const appContainer = document.getElementById("app-container");
     
-    // Removed the memory bypass for testing so you always start at Home
     renderHomePage();
 
     function renderHomePage() {
@@ -24,45 +23,87 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderTimePage() {
         appContainer.innerHTML = `
-            <div style="color: #8A2BE2; text-align: center; margin-bottom: 10px;">Time Page (24h format)</div>
-            <input type="time" id="time-input" style="width: 90%; background: black; color: white; border: 1px solid white; padding: 10px; margin-bottom: 10px;">
-            <div class="tab sc-tab" id="next-tab">Next</div>
+            <h1 style="color: #FF1493; text-align: center; margin-bottom: 20px;">Time Page</h1>
+            <div style="text-align: center; font-size: 14px; margin-bottom: 20px; line-height: 1.4;">
+                This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.
+            </div>
+            <input type="text" id="time-input" maxlength="5" placeholder="00:00" style="width: 80px; background: black; color: #FF1493; border: 2px solid #FF1493; border-radius: 5px; padding: 10px; margin-bottom: 15px; text-align: center; font-size: 18px; letter-spacing: 2px;">
+            <div class="tab" id="next-tab" style="background-color: #00FF00; color: black; border: 2px solid white; font-weight: bold;">Time</div>
         `;
+
+        // The logic to automatically format the 5-character time input with a colon
+        const timeInput = document.getElementById("time-input");
+        timeInput.addEventListener("input", function(e) {
+            let val = this.value.replace(/\D/g, ''); // Strip non-numbers
+            if (val.length > 2) {
+                val = val.substring(0, 2) + ':' + val.substring(2, 4);
+            }
+            this.value = val;
+        });
+
         document.getElementById("next-tab").addEventListener("click", () => {
-            const t = document.getElementById("time-input").value;
-            if(t) { 
+            const t = timeInput.value;
+            if(t.length === 5) { 
                 localStorage.setItem("resetTime", t); 
                 renderMoneyPage(); 
+            } else {
+                alert("Please enter a full 4-digit time (e.g., 0600 or 1800).");
             }
         });
     }
 
     function renderMoneyPage() {
         appContainer.innerHTML = `
-            <div style="color: #8A2BE2; text-align: center; margin-bottom: 10px;">Money Page (Decimals required)</div>
-            <input type="number" step="0.01" id="money-input" style="width: 90%; background: black; color: white; border: 1px solid white; padding: 10px; margin-bottom: 10px;">
-            <div class="tab sc-tab" id="track-tab">Track</div>
+            <h1 style="color: #00FF00; text-align: center; margin-bottom: 20px;">Money Page</h1>
+            <div style="text-align: center; font-size: 14px; margin-bottom: 20px; line-height: 1.4;">
+                How much to invest?<br>Must include decimal. Such $1 is $1.00
+            </div>
+            <input type="number" step="0.01" id="money-input" placeholder="$ 0.00" style="width: 150px; background: black; color: #00FF00; border: 2px solid #00FF00; border-radius: 5px; padding: 10px; margin-bottom: 15px; text-align: center; font-size: 16px;">
+            <div class="tab" id="track-tab" style="background-color: #00FF00; color: black; border: 2px solid white; font-weight: bold;">$ Enter</div>
         `;
         document.getElementById("track-tab").addEventListener("click", () => {
             const m = document.getElementById("money-input").value;
             if(m && m.includes(".")) { 
                 localStorage.setItem("investment", m); 
                 renderResultsPage(); 
+            } else {
+                alert("Please include a decimal point.");
             }
         });
     }
 
     function renderResultsPage() {
+        const inv = parseFloat(localStorage.getItem("investment") || 0);
+        const profitExp = (inv * 0.10).toFixed(2); 
+        
         appContainer.innerHTML = `
-            <div id="trading-data" style="width: 100%; text-align: center;">
-                <div>Investment: $<span id="inv-display">${localStorage.getItem("investment")}</span></div>
-                <div>Buy: $<span id="buy-display">0.00</span> | Sell: $<span id="sell-display">0.00</span></div>
-                <div>Current: $<span id="curr-display">0.00</span></div>
+            <h2 style="color: #FF1493; text-align: center; margin-top: 0; margin-bottom: 20px;">Results</h2>
+            
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <div style="text-align: left; font-size: 14px; line-height: 1.4;">
+                    <div><span style="color: #8A2BE2;">Reset time-</span> ${localStorage.getItem("resetTime")}</div>
+                    <div><span style="color: #FF1493;">Investment entered-</span> $${inv.toFixed(2)}</div>
+                    <div><span style="color: #008000;">Profit expected-</span> $${profitExp}</div>
+                    <br>
+                    <div><span style="color: #FF1493;">Currency-</span> Determining...</div>
+                    <div><span style="color: #8A2BE2;">Current-</span> Determining...</div>
+                    <div><span style="color: #008080;">Buy-</span> Determining...</div>
+                    <div><span style="color: #008000;">Sell-</span> Determining...</div>
+                </div>
+                
+                <div style="text-align: right; font-size: 14px;">
+                    <div><span style="color: #8A2BE2;">Time until reset-</span> 2hrs 30min</div>
+                    <div class="tab" id="time-reset-tab" style="background-color: #CC0000; color: white; border: 1px solid white; margin-top: 5px; font-size: 14px; padding: 5px; cursor: pointer;">Time reset</div>
+                </div>
             </div>
+
             <h2 style="color: #FF5F1F; text-align: center; margin-top: 20px;">Accuracy</h2>
-            <div style="color: #008080; text-align: center; width: 100%;">Todays- <span id="todays-acc">0.00%</span></div>
-            <div class="tab sc-tab" id="money-reset-tab">$$ Reset $$</div>
-            <div class="tab sc-tab" id="time-reset-tab">Time reset</div>
+            <div style="text-align: left; font-size: 14px; width: 100%; line-height: 1.4;">
+                <div><span style="color: #A9A9A9;">Todays-</span> Determining...</div>
+                <div><span style="color: #8A2BE2;">Total-</span> Determining...</div>
+            </div>
+            
+            <div class="tab sc-tab" id="money-reset-tab" style="margin-top: 30px;">$$ Reset $$</div>
         `;
 
         document.getElementById("money-reset-tab").addEventListener("click", () => renderMoneyPage());
@@ -72,18 +113,5 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Historical arrays completely purged.");
             renderHomePage();
         });
-        
-        // The 6-second test timer has been permanently removed
-    }
-
-    function triggerVictoryState(liveAccuracy) {
-        appContainer.innerHTML = `
-            <div style="width: 100%; text-align: center; margin-top: 20px;">
-                <div>Reset time- ${localStorage.getItem("resetTime") || "00:00"}</div>
-                <div>Currency- Bitcoin</div>
-                <div style="color: #008080; font-weight: bold;">Todays- ${liveAccuracy.toFixed(2)}%</div>
-                <div>Total- 100.00%</div>
-            </div>
-        `;
     }
 });
