@@ -1,14 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const appContainer = document.getElementById("app-container");
     
-    let resetTime = localStorage.getItem("resetTime");
-    let investment = localStorage.getItem("investment");
-    
-    if (resetTime && investment) {
-        renderResultsPage();
-    } else {
-        renderHomePage();
-    }
+    // Removed the memory bypass for testing so you always start at Home
+    renderHomePage();
 
     function renderHomePage() {
         appContainer.innerHTML = `
@@ -79,13 +73,13 @@ document.addEventListener("DOMContentLoaded", () => {
             renderHomePage();
         });
         
-        setTimeout(() => triggerVictoryState(100.45), 6000); 
+        // The 6-second test timer has been permanently removed
     }
 
     function triggerVictoryState(liveAccuracy) {
         appContainer.innerHTML = `
             <div style="width: 100%; text-align: center; margin-top: 20px;">
-                <div>Reset time- ${localStorage.getItem("resetTime")}</div>
+                <div>Reset time- ${localStorage.getItem("resetTime") || "00:00"}</div>
                 <div>Currency- Bitcoin</div>
                 <div style="color: #008080; font-weight: bold;">Todays- ${liveAccuracy.toFixed(2)}%</div>
                 <div>Total- 100.00%</div>
