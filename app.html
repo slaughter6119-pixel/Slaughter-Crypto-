@@ -6,23 +6,22 @@
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 95vh; }
         .header { text-align: center; color: #FF1493; font-size: 28px; margin-bottom: 20px; }
         
-        /* Thin white border container */
-        .data-box { border: 1px solid white; padding: 15px; margin-bottom: 20px; }
+        /* Border only around the results box */
+        .results-box { border: 1px solid white; padding: 20px; width: 100%; box-sizing: border-box; }
         
-        .top-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
-        .main-layout { display: flex; justify-content: space-between; }
+        .top-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px; }
+        .main-layout { display: flex; justify-content: space-between; align-items: flex-start; }
         .left-col { width: 55%; }
         .right-col { width: 40%; display: flex; flex-direction: column; gap: 10px; }
-        .control-btn { padding: 12px; background-color: #8B0000; border: none; color: white; font-weight: bold; }
+        .control-btn { padding: 10px; background-color: #8B0000; border: none; color: white; font-weight: bold; }
         
         .accuracy-title { text-align: center; color: #FF4500; font-size: 24px; font-weight: bold; margin: 20px 0; }
         
-        /* Specific Colors */
+        /* Exact color mapping */
         .pink { color: #FF1493; }
-        .orange { color: #FF4500; }
         .green { color: #00FF00; }
         .teal { color: #008080; }
-        .purple { color: #8A2BE2; }
+        .white { color: white; }
         
         marquee { margin-top: auto; padding-top: 20px; width: 100%; color: white; }
     </style>
@@ -30,21 +29,21 @@
 <body>
     <h1 class="header">Results</h1>
     
-    <div class="data-box">
+    <div class="results-box">
         <div class="top-info">
-            <span class="pink">Reset time- 17:00</span>
-            <span class="pink">Time until reset- 2hrs 30min</span>
+            <span class="pink">Reset time-</span> <span class="white">17:00</span>
+            <span class="pink">Time until reset-</span> <span class="white">2hrs 30min</span>
         </div>
 
         <div class="main-layout">
             <div class="left-col">
-                <p class="pink">Investment entered- $2.52</p>
-                <p class="green">Profit expected- $0.25</p>
+                <p class="pink">Investment entered- <span class="white">$2.52</span></p>
+                <p class="green">Profit expected- <span class="white">$0.25</span></p>
                 <br>
-                <p class="pink">Currency- <span class="teal">Determining...</span></p>
-                <p class="pink">Current- <span class="teal">Determining...</span></p>
-                <p class="pink">Buy- <span class="teal">Determining...</span></p>
-                <p class="pink">Sell- <span class="teal">Determining...</span></p>
+                <p class="pink">Currency- <span class="white">Determining...</span></p>
+                <p class="pink">Current- <span class="white">Determining...</span></p>
+                <p class="pink">Buy- <span class="white">Determining...</span></p>
+                <p class="pink">Sell- <span class="white">Determining...</span></p>
             </div>
             
             <div class="right-col">
@@ -56,9 +55,9 @@
 
         <div class="accuracy-title">Accuracy</div>
         
-        <div>
-            <p class="teal">Todays- Determining...</p>
-            <p class="teal">Total- Determining...</p>
+        <div style="line-height: 2;">
+            <p class="teal">Todays- <span class="white">Determining...</span></p>
+            <p class="teal">Total- <span class="white">Determining...</span></p>
         </div>
     </div>
 
