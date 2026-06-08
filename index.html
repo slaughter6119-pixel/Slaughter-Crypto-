@@ -6,33 +6,38 @@
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; }
         .results-page { display: flex; flex-direction: column; width: 100%; }
         
-        /* Fixed Layout with Borders */
-        .header-box { border: 1px solid white; padding: 10px; margin-bottom: 20px; text-align: center; color: #008080; }
+        /* Layout without borders */
+        .header { text-align: center; color: #FF1493; margin-bottom: 20px; }
         .main-container { display: flex; justify-content: space-between; align-items: flex-start; }
-        .data-column { border: 1px solid white; padding: 10px; width: 50%; }
+        .data-column { width: 55%; line-height: 1.6; }
         .control-column { display: flex; flex-direction: column; gap: 10px; width: 40%; }
         
+        /* Colors */
         .teal { color: #008080; }
         .green { color: #00FF00; }
-        .control-btn { padding: 12px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; cursor: pointer; }
+        .control-btn { padding: 12px; background-color: #8B0000; border: none; color: white; font-weight: bold; cursor: pointer; }
+        
+        /* Footer */
+        .footer { margin-top: 30px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div class="results-page">
-        <h1 class="header-box">Results</h1>
+        <h1 class="header">Results</h1>
         
         <div class="main-container">
             <div class="data-column">
                 <p>Reset time: 17:00</p>
                 <p>Investment: $2.52</p>
                 <p class="green">Profit: $0.25</p>
-                <hr>
+                <p>Time until reset: <span class="teal">2hrs 30min</span></p>
+                <br>
                 <p>Currency: <span class="teal">Determining...</span></p>
                 <p>Current: <span class="teal">Determining...</span></p>
                 <p>Buy: <span class="teal">Determining...</span></p>
                 <p>Sell: <span class="teal">Determining...</span></p>
-                <hr>
+                <br>
                 <p>Todays: <span class="teal">Determining...</span></p>
                 <p>Total: <span class="teal">Determining...</span></p>
             </div>
@@ -42,6 +47,14 @@
                 <button class="control-btn">$$ Reset $$</button>
                 <button class="control-btn">New pick</button>
             </div>
+        </div>
+
+        <div class="footer">
+            <span style="color: #FF5F1F;">Slaughter's</span>
+            <span style="color: #FF1493;">Merilee,</span>
+            <span style="color: #008080;">Kyrah,</span>
+            <span style="color: white;">and</span>
+            <span style="color: #8A2BE2;">Zaylee!</span> ✨
         </div>
     </div>
 </body>
