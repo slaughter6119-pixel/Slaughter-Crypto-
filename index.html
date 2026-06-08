@@ -12,6 +12,16 @@
         marquee { margin-top: auto; padding-top: 20px; width: 100%; }
         #time-page { display: none; }
     </style>
+    <script>
+        function checkTime() {
+            const timeValue = document.getElementById("time-input").value;
+            if (timeValue.length === 5) {
+                alert("Time saved: " + timeValue);
+            } else {
+                alert("Please enter a valid time (00:00)");
+            }
+        }
+    </script>
 </head>
 <body>
 
@@ -19,15 +29,15 @@
         <h2 style="color: #FF1493; margin-bottom: 5px;">Welcome!</h2>
         <h1 style="color: #FF5F1F; text-align: center; margin-top: 0;">Let's Slaughter Crypto</h1>
         <div class="button-row">
-            <button id="ready-btn" style="background-color: #FF5F1F;">I'm ready!</button>
-            <button id="not-yet-btn" style="background-color: #FF1493;">Not yet</button>
+            <button id="ready-btn" style="background-color: #FF5F1F;" onclick="document.getElementById('home-page').style.display='none'; document.getElementById('time-page').style.display='flex';">I'm ready!</button>
+            <button id="not-yet-btn" style="background-color: #FF1493;" onclick="document.body.innerHTML='<h1 style=\'color: white; text-align: center;\'>Application Closed</h1>';">Not yet</button>
         </div>
     </div>
 
     <div id="time-page" class="page">
         <h1 style="color: #FF1493;">Time Page</h1>
-        <input type="text" id="time-input" class="time-box" placeholder="00:00" maxlength="5">
-        <button id="submit-btn" class="enter-btn">Enter</button>
+        <input type="text" id="time-input" class="time-box" placeholder="00:00" maxlength="5" oninput="let v = this.value.replace(/\D/g, ''); if(v.length > 2) v = v.substring(0,2) + ':' + v.substring(2,4); this.value = v;">
+        <button id="submit-btn" class="enter-btn" onclick="checkTime()">Enter</button>
     </div>
 
     <marquee>
@@ -36,35 +46,5 @@
         <span style="color: #008080;">Kyrah,</span>
         <span style="color: #8A2BE2;">and Zaylee!</span> ✨
     </marquee>
-
-    <script>
-        // Page Navigation
-        document.getElementById("ready-btn").onclick = function() {
-            document.getElementById("home-page").style.display = 'none';
-            document.getElementById("time-page").style.display = 'flex';
-        };
-
-        // Time Input Formatting
-        document.getElementById("time-input").oninput = function(e) {
-            let v = e.target.value.replace(/\D/g, '');
-            if (v.length > 2) v = v.substring(0, 2) + ':' + v.substring(2, 4);
-            e.target.value = v;
-        };
-
-        // Submit Logic
-        document.getElementById("submit-btn").onclick = function() {
-            const timeValue = document.getElementById("time-input").value;
-            if (timeValue.length === 5) {
-                alert("Time saved: " + timeValue);
-                // We will add the transition to the Money Page here next!
-            } else {
-                alert("Please enter a valid time (00:00)");
-            }
-        };
-
-        document.getElementById("not-yet-btn").onclick = function() {
-            document.getElementById("content").innerHTML = '<h1 style="color: white; text-align: center;">Application Closed</h1>';
-        };
-    </script>
 </body>
 </html>
