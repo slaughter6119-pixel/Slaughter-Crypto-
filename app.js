@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="not-yet-btn" style="background: #FF1493; color: white;">Not yet</button>
         `;
         document.getElementById("ready-btn").onclick = renderTimePage;
-        document.getElementById("not-yet-btn").onclick = () => { appContainer.innerHTML = ''; };
+        document.getElementById("not-yet-btn").onclick = () => { appContainer.innerHTML = '<h1 style="color:white; text-align:center;">See you later!</h1>'; };
     }
 
     function renderTimePage() {
@@ -40,9 +40,26 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    function renderResultsPage() {
-        appContainer.innerHTML = `<h1 style="color: #FF1493;">Results Page</h1>`;
+    async function renderResultsPage() {
+        const inv = parseFloat(localStorage.getItem("investment") || 0);
+        appContainer.innerHTML = `
+            <h1 style="color: #FF1493;">Results</h1>
+            <div style="text-align:left; width:100%; color:white; font-size:18px;">
+                <div>Reset time- ${localStorage.getItem("resetTime")}</div>
+                <div>Investment entered- $${inv.toFixed(2)}</div>
+                <div style="color:#00FF00;">Profit expected- $${(inv * 0.1).toFixed(2)}</div>
+                <br>
+                <div style="color:#FF1493;">Currency- Determining...</div>
+                <div style="color:#8A2BE2;">Current- Determining...</div>
+                <div style="color:#008080;">Buy- Determining...</div>
+                <div style="color:#008000;">Sell- Determining...</div>
+                <br>
+                <div style="color:#008080;">Todays- Determining...</div>
+                <div style="color:#8A2BE2;">Total- Determining...</div>
+            </div>
+            <button id="reset-btn" style="background:#CC0000; color:white; margin-top:20px;">Time reset</button>
+        `;
+        document.getElementById("reset-btn").onclick = () => { localStorage.clear(); location.reload(); };
     }
-
     renderHomePage();
 });
