@@ -3,11 +3,17 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="background-color: black; color: white;">
-    <div id="app-container">
+<body style="background-color: black; color: white; text-align: center; font-family: sans-serif; padding: 20px;">
+
+    <div id="content">
         <h1>Slaughter Crypto</h1>
-        <button id="ready-btn">I'm ready!</button>
+        <button id="main-btn" style="font-size: 20px; padding: 20px; width: 100%; color: black; background: #FF5F1F; border: none; font-weight: bold;">I'm ready!</button>
     </div>
-    <script src="app.js"></script>
+
+    <script>
+        document.getElementById("main-btn").onclick = function() {
+            document.getElementById("content").innerHTML = "<h1>It works perfectly!</h1>";
+        };
+    </script>
 </body>
 </html>
