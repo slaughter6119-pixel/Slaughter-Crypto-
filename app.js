@@ -33,9 +33,16 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderMoneyPage() {
         appContainer.innerHTML = `
             <h1 style="color: #00FF00;">Money Page</h1>
-            <input type="number" step="0.01" id="money-input" placeholder="0.00">
+            <input type="number" step="0.01" id="money-input" placeholder="0.00" style="width: 150px !important;">
             <button id="track-btn" style="background: #00FF00; color: black;">$ Enter</button>
         `;
+        document.getElementById("track-btn").onclick = () => {
+            const m = document.getElementById("money-input").value;
+            if(m) { 
+                localStorage.setItem("investment", m); 
+                alert("Navigating to Results...");
+            }
+        };
     }
 
     renderHomePage();
