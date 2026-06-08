@@ -9,30 +9,40 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="not-yet-tab" style="background: #FF1493; color: white; width: 100%; padding: 15px;">Not yet</button>
         `;
         document.getElementById("ready-tab").onclick = renderTimePage;
-        document.getElementById("not-yet-tab").onclick = () => { appContainer.innerHTML = '<h1 style="color:red; text-align:center;">Application Closed</h1>'; };
+        document.getElementById("not-yet-tab").onclick = () => { 
+            appContainer.innerHTML = '<h1 style="color:red; text-align:center;">Application Closed</h1>'; 
+        };
     }
 
     function renderTimePage() {
         appContainer.innerHTML = `
             <h1 style="color: #FF1493; text-align: center;">Time Page</h1>
-            <input type="text" id="time-input" maxlength="5" placeholder="00:00" style="display:block; margin: 0 auto; width: 100px; text-align: center; background: black; color: #FF1493; border: 2px solid #FF1493;">
+            <input type="text" id="time-input" maxlength="5" placeholder="00:00" style="display:block; margin: 0 auto; width: 100px; text-align: center; background: black; color: white; border: 2px solid #FF1493;">
             <button id="next-tab" style="background: #00FF00; color: black; width: 100%; margin-top: 20px; padding: 15px;">Time</button>
         `;
         document.getElementById("next-tab").onclick = () => {
             const val = document.getElementById("time-input").value;
-            if(val.length === 5) { localStorage.setItem("resetTime", val); renderMoneyPage(); }
+            if(val.length === 5) { 
+                localStorage.setItem("resetTime", val); 
+                renderMoneyPage(); 
+            } else {
+                alert("Please enter 00:00 format.");
+            }
         };
     }
 
     function renderMoneyPage() {
         appContainer.innerHTML = `
             <h1 style="color: #00FF00; text-align: center;">Money Page</h1>
-            <input type="number" step="0.01" id="money-input" placeholder="0.00" style="display:block; margin: 0 auto; width: 150px; text-align: center; background: black; color: #00FF00; border: 2px solid #00FF00;">
+            <input type="number" step="0.01" id="money-input" placeholder="0.00" style="display:block; margin: 0 auto; width: 150px; text-align: center; background: black; color: white; border: 2px solid #00FF00;">
             <button id="track-tab" style="background: #00FF00; color: black; width: 100%; margin-top: 20px; padding: 15px;">$ Enter</button>
         `;
         document.getElementById("track-tab").onclick = () => {
             const m = document.getElementById("money-input").value;
-            if(m) { localStorage.setItem("investment", m); renderResultsPage(); }
+            if(m) { 
+                localStorage.setItem("investment", m); 
+                renderResultsPage(); 
+            }
         };
     }
 
