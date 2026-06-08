@@ -9,9 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="not-yet-tab" style="background: #FF1493; color: white; width: 100%; padding: 15px;">Not yet</button>
         `;
         document.getElementById("ready-tab").onclick = renderTimePage;
-        document.getElementById("not-yet-tab").onclick = () => { 
-            appContainer.innerHTML = '<h1 style="color:red; text-align:center;">Application Closed</h1>'; 
-        };
     }
 
     function renderTimePage() {
@@ -22,12 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         document.getElementById("next-tab").onclick = () => {
             const val = document.getElementById("time-input").value;
-            if(val.length === 5) { 
-                localStorage.setItem("resetTime", val); 
-                renderMoneyPage(); 
-            } else {
-                alert("Please enter 00:00 format.");
-            }
+            if(val.length === 5) { localStorage.setItem("resetTime", val); renderMoneyPage(); }
         };
     }
 
@@ -39,41 +31,16 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         document.getElementById("track-tab").onclick = () => {
             const m = document.getElementById("money-input").value;
-            if(m) { 
-                localStorage.setItem("investment", m); 
-                renderResultsPage(); 
-            }
+            if(m) { localStorage.setItem("investment", m); renderResultsPage(); }
         };
     }
 
     function renderResultsPage() {
-        const inv = parseFloat(localStorage.getItem("investment") || 0);
-        const profit = (inv * 0.10).toFixed(2);
-        
         appContainer.innerHTML = `
             <h2 style="color: #FF1493; text-align: center;">Results</h2>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="color: white; font-size: 14px; line-height: 1.6;">
-                    <div style="color: #8A2BE2;">Reset time- ${localStorage.getItem("resetTime")}</div>
-                    <div style="color: #FF1493;">Investment entered- $${inv.toFixed(2)}</div>
-                    <div style="color: #00FF00;">Profit expected- $${profit}</div>
-                    <div style="color: #FF1493;">Currency- Determining...</div>
-                    <div style="color: #8A2BE2;">Current- Determining...</div>
-                    <div style="color: #008080;">Buy- Determining...</div>
-                    <div style="color: #008000;">Sell- Determining...</div>
-                    <div style="color: #008080;">Todays- Determining...</div>
-                    <div style="color: #8A2BE2;">Total- Determining...</div>
-                </div>
-                <div style="text-align: right; width: 120px;">
-                    <div style="color: #8A2BE2; font-size: 12px; margin-bottom: 5px;">Time until reset- 2hrs 30min</div>
-                    <button id="time-reset-tab" style="background: #CC0000; color: white; width: 100%; margin-bottom: 5px;">Time reset</button>
-                    <button id="money-reset-tab" style="background: #CC0000; color: white; width: 100%; margin-bottom: 5px;">$$ Reset $$</button>
-                    <button id="new-pick-tab" style="background: #CC0000; color: white; width: 100%;">New pick</button>
-                </div>
-            </div>
-            <h2 style="color: #FF5F1F; text-align: center; margin-top: 20px;">Accuracy</h2>
+            <div style="color: white;">Reset time- ${localStorage.getItem("resetTime")}</div>
+            <button id="time-reset-tab" style="background: #CC0000; color: white; width: 100%;">Time reset</button>
         `;
-        document.getElementById("money-reset-tab").onclick = renderMoneyPage;
         document.getElementById("time-reset-tab").onclick = () => { localStorage.clear(); renderHomePage(); };
     }
 
