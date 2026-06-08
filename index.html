@@ -3,16 +3,20 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="background-color: black; color: white; text-align: center; font-family: sans-serif; padding: 20px;">
+<body style="background-color: black; color: white; font-family: sans-serif; text-align: center; padding: 20px;">
 
     <div id="content">
-        <h1>Slaughter Crypto</h1>
-        <button id="main-btn" style="font-size: 20px; padding: 20px; width: 100%; color: black; background: #FF5F1F; border: none; font-weight: bold;">I'm ready!</button>
+        <h1 style="color: #FF5F1F;">Let's Slaughter Crypto</h1>
+        <button id="ready-btn" style="font-size: 20px; padding: 20px; width: 100%; color: white; background: #FF5F1F; border: none; font-weight: bold; margin-bottom: 10px;">I'm ready!</button>
+        <button id="not-yet-btn" style="font-size: 20px; padding: 20px; width: 100%; color: white; background: #FF1493; border: none; font-weight: bold;">Not yet</button>
     </div>
 
     <script>
-        document.getElementById("main-btn").onclick = function() {
-            document.getElementById("content").innerHTML = "<h1>It works perfectly!</h1>";
+        document.getElementById("ready-btn").onclick = function() {
+            document.getElementById("content").innerHTML = '<h1 style="color: #FF1493;">Time Page</h1>';
+        };
+        document.getElementById("not-yet-btn").onclick = function() {
+            document.getElementById("content").innerHTML = '<h1 style="color: white;">Application Closed</h1>';
         };
     </script>
 </body>
