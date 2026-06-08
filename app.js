@@ -8,12 +8,13 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="not-yet-btn" style="background: #FF1493; color: white;">Not yet</button>
         `;
         document.getElementById("ready-btn").onclick = renderTimePage;
+        document.getElementById("not-yet-btn").onclick = () => { appContainer.innerHTML = ''; };
     }
 
     function renderTimePage() {
         appContainer.innerHTML = `
             <h1 style="color: #FF1493;">Time Page</h1>
-            <input type="text" id="time-input" maxlength="5" placeholder="00:00">
+            <input type="text" id="time-input" maxlength="5" placeholder="00:00" style="border: 1px solid white; background: black; color: white; padding: 10px; font-size: 24px; text-align: center; width: 100px;">
             <button id="time-btn" style="background: #00FF00; color: black;">Time</button>
         `;
         const input = document.getElementById("time-input");
@@ -23,26 +24,24 @@ document.addEventListener("DOMContentLoaded", () => {
             e.target.value = v;
         });
         document.getElementById("time-btn").onclick = () => {
-            if(input.value.length === 5) { 
-                localStorage.setItem("resetTime", input.value); 
-                renderMoneyPage(); 
-            }
+            if(input.value.length === 5) { localStorage.setItem("resetTime", input.value); renderMoneyPage(); }
         };
     }
 
     function renderMoneyPage() {
         appContainer.innerHTML = `
             <h1 style="color: #00FF00;">Money Page</h1>
-            <input type="number" step="0.01" id="money-input" placeholder="0.00" style="width: 150px !important;">
+            <div class="input-wrapper"><span style="color:white; font-size:24px;">$</span><input type="number" step="0.01" id="money-input" placeholder="0.00"></div>
             <button id="track-btn" style="background: #00FF00; color: black;">$ Enter</button>
         `;
         document.getElementById("track-btn").onclick = () => {
             const m = document.getElementById("money-input").value;
-            if(m) { 
-                localStorage.setItem("investment", m); 
-                alert("Navigating to Results...");
-            }
+            if(m) { localStorage.setItem("investment", m); renderResultsPage(); }
         };
+    }
+
+    function renderResultsPage() {
+        appContainer.innerHTML = `<h1 style="color: #FF1493;">Results Page</h1>`;
     }
 
     renderHomePage();
