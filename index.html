@@ -2,20 +2,28 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <style>
+        /* Force everything to be black and properly spaced */
+        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 90vh; }
+        #content { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .button-row { display: flex; width: 100%; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 20px; font-size: 20px; border: none; font-weight: bold; color: white; cursor: pointer; }
+        marquee { margin-top: auto; padding-top: 20px; width: 100%; }
+    </style>
 </head>
-<body style="background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 90vh;">
+<body>
 
-    <div id="content" style="width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1;">
+    <div id="content">
         <h2 style="color: #FF1493; margin-bottom: 5px;">Welcome!</h2>
         <h1 style="color: #FF5F1F; text-align: center; margin-top: 0;">Let's Slaughter Crypto</h1>
         
-        <div style="display: flex; width: 100%; gap: 10px;">
-            <button id="ready-btn" style="flex: 1; padding: 20px; font-size: 20px; background-color: #FF5F1F; color: white; border: none; font-weight: bold;">I'm ready!</button>
-            <button id="not-yet-btn" style="flex: 1; padding: 20px; font-size: 20px; background-color: #FF1493; color: white; border: none; font-weight: bold;">Not yet</button>
+        <div class="button-row">
+            <button id="ready-btn" style="background-color: #FF5F1F;">I'm ready!</button>
+            <button id="not-yet-btn" style="background-color: #FF1493;">Not yet</button>
         </div>
     </div>
 
-    <marquee style="color: white; margin-top: 20px; width: 100%;">
+    <marquee>
         <span style="color: #FF5F1F;">Slaughter's</span>
         <span style="color: #FF1493;">Merilee,</span>
         <span style="color: #008080;">Kyrah,</span>
