@@ -4,25 +4,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 90vh; }
-        #content { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .page { width: 100%; display: flex; flex-direction: column; align-items: center; }
         .button-row { display: flex; width: 100%; gap: 10px; margin-top: 20px; }
         button { flex: 1; padding: 20px; font-size: 20px; border: none; font-weight: bold; color: white; cursor: pointer; }
-        .time-box { font-size: 32px; padding: 15px; width: 120px; text-align: center; background: black; color: white; border: 1px solid white; margin-top: 20px; display: block; }
-        /* A brand new class name */
-        .tiny-btn { background-color: #008080; padding: 10px 30px; font-size: 16px; margin-top: 20px; border: none; color: white; font-weight: bold; cursor: pointer; }
+        .time-box { font-size: 32px; padding: 15px; width: 120px; text-align: center; background: black; color: white; border: 1px solid white; margin-top: 20px; }
+        .enter-btn { background-color: #008080; padding: 10px 30px; font-size: 18px; margin-top: 20px; border: none; color: white; font-weight: bold; cursor: pointer; }
         marquee { margin-top: auto; padding-top: 20px; width: 100%; }
+        #time-page { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="content">
+    <div id="home-page" class="page">
         <h2 style="color: #FF1493; margin-bottom: 5px;">Welcome!</h2>
         <h1 style="color: #FF5F1F; text-align: center; margin-top: 0;">Let's Slaughter Crypto</h1>
-        
         <div class="button-row">
             <button id="ready-btn" style="background-color: #FF5F1F;">I'm ready!</button>
             <button id="not-yet-btn" style="background-color: #FF1493;">Not yet</button>
         </div>
+    </div>
+
+    <div id="time-page" class="page">
+        <h1 style="color: #FF1493;">Time Page</h1>
+        <input type="text" id="time-input" class="time-box" placeholder="00:00" maxlength="5">
+        <button id="submit-btn" class="enter-btn">Enter</button>
     </div>
 
     <marquee>
@@ -34,19 +39,13 @@
 
     <script>
         document.getElementById("ready-btn").onclick = function() {
-            document.getElementById("content").innerHTML = `
-                <h1 style="color: #FF1493;">Time Page</h1>
-                <input type="text" id="time-input" class="time-box" placeholder="00:00" maxlength="5">
-                <button id="submit-btn" class="tiny-btn">Enter</button>
-            `;
-            document.getElementById("time-input").oninput = function(e) {
-                let v = e.target.value.replace(/\D/g, '');
-                if (v.length > 2) v = v.substring(0, 2) + ':' + v.substring(2, 4);
-                e.target.value = v;
-            };
+            document.getElementById("home-page").style.display = 'none';
+            document.getElementById("time-page").style.display = 'flex';
         };
-        document.getElementById("not-yet-btn").onclick = function() {
-            document.getElementById("content").innerHTML = '<h1 style="color: white; text-align: center;">Application Closed</h1>';
+        document.getElementById("time-input").oninput = function(e) {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length > 2) v = v.substring(0, 2) + ':' + v.substring(2, 4);
+            e.target.value = v;
         };
     </script>
 </body>
