@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="not-yet-btn" style="background: #FF1493; color: white;">Not yet</button>
         `;
         document.getElementById("ready-btn").onclick = renderTimePage;
-        document.getElementById("not-yet-btn").onclick = () => { appContainer.innerHTML = '<h1 style="color:white; text-align:center;">See you later!</h1>'; };
+        document.getElementById("not-yet-btn").onclick = () => { appContainer.innerHTML = ''; };
     }
 
     function renderTimePage() {
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    async function renderResultsPage() {
+    function renderResultsPage() {
         const inv = parseFloat(localStorage.getItem("investment") || 0);
         appContainer.innerHTML = `
             <h1 style="color: #FF1493;">Results</h1>
