@@ -3,41 +3,40 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
-        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 95vh; }
-        .page { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
-        .results-container { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px; }
+        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; }
+        .results-page { display: flex; flex-direction: column; width: 100%; }
         
-        /* Typography and Colors */
-        h1 { color: #FF1493; }
-        .teal-text { color: #008080; }
-        .data-column { text-align: left; font-size: 16px; line-height: 1.5; }
-        
-        /* Buttons */
+        /* Fixed Layout with Borders */
+        .header-box { border: 1px solid white; padding: 10px; margin-bottom: 20px; text-align: center; color: #008080; }
+        .main-container { display: flex; justify-content: space-between; align-items: flex-start; }
+        .data-column { border: 1px solid white; padding: 10px; width: 50%; }
         .control-column { display: flex; flex-direction: column; gap: 10px; width: 40%; }
-        .control-btn { padding: 12px; background-color: #8B0000; border: none; color: white; font-weight: bold; border-radius: 5px; }
         
-        /* Footer/Marquee */
-        marquee { margin-top: auto; padding-top: 20px; width: 100%; color: white; }
+        .teal { color: #008080; }
+        .green { color: #00FF00; }
+        .control-btn { padding: 12px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="results-page" class="page">
-        <h1 class="teal-text">Results</h1>
-        <div class="results-container">
+    <div class="results-page">
+        <h1 class="header-box">Results</h1>
+        
+        <div class="main-container">
             <div class="data-column">
                 <p>Reset time: 17:00</p>
                 <p>Investment: $2.52</p>
-                <p style="color: #00FF00;">Profit: $0.25</p>
-                <br>
-                <p>Currency: <span class="teal-text">Determining...</span></p>
-                <p>Current: <span class="teal-text">Determining...</span></p>
-                <p>Buy: <span class="teal-text">Determining...</span></p>
-                <p>Sell: <span class="teal-text">Determining...</span></p>
-                <br>
-                <p>Todays: <span class="teal-text">Determining...</span></p>
-                <p>Total: <span class="teal-text">Determining...</span></p>
+                <p class="green">Profit: $0.25</p>
+                <hr>
+                <p>Currency: <span class="teal">Determining...</span></p>
+                <p>Current: <span class="teal">Determining...</span></p>
+                <p>Buy: <span class="teal">Determining...</span></p>
+                <p>Sell: <span class="teal">Determining...</span></p>
+                <hr>
+                <p>Todays: <span class="teal">Determining...</span></p>
+                <p>Total: <span class="teal">Determining...</span></p>
             </div>
+            
             <div class="control-column">
                 <button class="control-btn">Time reset</button>
                 <button class="control-btn">$$ Reset $$</button>
@@ -45,12 +44,5 @@
             </div>
         </div>
     </div>
-
-    <marquee>
-        <span style="color: #FF5F1F;">Slaughter's</span>
-        <span style="color: #FF1493;">Merilee,</span>
-        <span style="color: #008080;">Kyrah,</span>
-        <span style="color: #8A2BE2;">and Zaylee!</span> ✨
-    </marquee>
 </body>
 </html>
