@@ -1,101 +1,70 @@
 document.addEventListener("DOMContentLoaded", () => {
     const appContainer = document.getElementById("app-container");
 
-    // --- SCANNER ENGINE ---
-    async function fetchScannerData() {
-        try {
-            const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-            const data = await response.json();
-            const usdtPairs = data.filter(item => item.symbol.endsWith('USDT'));
-            const topPerformer = usdtPairs.reduce((prev, current) => 
-                (parseFloat(prev.priceChangePercent) > parseFloat(current.priceChangePercent)) ? prev : current
-            );
-            return {
-                symbol: topPerformer.symbol,
-                price: parseFloat(topPerformer.lastPrice).toFixed(4),
-                change: parseFloat(topPerformer.priceChangePercent).toFixed(2)
-            };
-        } catch (error) {
-            return { symbol: "Error", price: "0.00", change: "0.00" };
-        }
-    }
-
-    // --- PAGE RENDERING ---
     function renderHomePage() {
         appContainer.innerHTML = `
             <div id="welcome-text">Welcome!</div>
-            <div id="main-header">Let's <span style="color: #FF5F1F;">Slaughter Crypto</span></div>
-            <button class="tab ready-btn" id="ready-tab">I'm ready!</button>
-            <button class="tab not-yet-btn" id="not-yet-tab">Not yet</button>
+            <div id="main-header" style="color: #FF5F1F;">Let's Slaughter Crypto</div>
+            <button id="ready-tab" style="background: #FF5F1F; color: white; width: 100%; padding: 15px; margin-bottom: 10px;">I'm ready!</button>
+            <button id="not-yet-tab" style="background: #FF1493; color: white; width: 100%; padding: 15px;">Not yet</button>
         `;
-        document.getElementById("ready-tab").addEventListener("click", renderTimePage);
-        document.getElementById("not-yet-tab").addEventListener("click", () => {
-            appContainer.innerHTML = '<h1 style="color: #FF5F1F; text-align: center;">Application Closed</h1>';
-        });
+        document.getElementById("ready-tab").onclick = renderTimePage;
+        document.getElementById("not-yet-tab").onclick = () => { appContainer.innerHTML = '<h1 style="color:red; text-align:center;">Application Closed</h1>'; };
     }
 
     function renderTimePage() {
         appContainer.innerHTML = `
             <h1 style="color: #FF1493; text-align: center;">Time Page</h1>
-            <p style="text-align: center; color: white;">Enter reset time (24h format):</p>
-            <input type="text" id="time-input" maxlength="5" placeholder="00:00" style="display:block; margin: 0 auto; width: 80px; text-align: center; font-size: 18px;">
-            <button class="tab" id="next-tab" style="display:block; margin: 20px auto;">Time</button>
+            <input type="text" id="time-input" maxlength="5" placeholder="00:00" style="display:block; margin: 0 auto; width: 100px; text-align: center; background: black; color: #FF1493; border: 2px solid #FF1493;">
+            <button id="next-tab" style="background: #00FF00; color: black; width: 100%; margin-top: 20px; padding: 15px;">Time</button>
         `;
-        const input = document.getElementById("time-input");
-        input.addEventListener("input", (e) => {
-            let v = e.target.value.replace(/\D/g, '');
-            if (v.length > 2) v = v.substring(0, 2) + ':' + v.substring(2, 4);
-            e.target.value = v;
-        });
-        document.getElementById("next-tab").addEventListener("click", () => {
-            if(input.value.length === 5) {
-                localStorage.setItem("resetTime", input.value);
-                renderMoneyPage();
-            }
-        });
+        document.getElementById("next-tab").onclick = () => {
+            const val = document.getElementById("time-input").value;
+            if(val.length === 5) { localStorage.setItem("resetTime", val); renderMoneyPage(); }
+        };
     }
 
     function renderMoneyPage() {
         appContainer.innerHTML = `
             <h1 style="color: #00FF00; text-align: center;">Money Page</h1>
-            <p style="text-align: center; color: white;">Investment amount (e.g. 10.00):</p>
-            <input type="number" step="0.01" id="money-input" placeholder="0.00" style="display:block; margin: 0 auto; width: 150px; text-align: center;">
-            <button class="tab" id="track-tab" style="display:block; margin: 20px auto;">$ Enter</button>
+            <input type="number" step="0.01" id="money-input" placeholder="0.00" style="display:block; margin: 0 auto; width: 150px; text-align: center; background: black; color: #00FF00; border: 2px solid #00FF00;">
+            <button id="track-tab" style="background: #00FF00; color: black; width: 100%; margin-top: 20px; padding: 15px;">$ Enter</button>
         `;
-        document.getElementById("track-tab").addEventListener("click", () => {
+        document.getElementById("track-tab").onclick = () => {
             const m = document.getElementById("money-input").value;
-            if(m) {
-                localStorage.setItem("investment", m);
-                renderResultsPage();
-            }
-        });
+            if(m) { localStorage.setItem("investment", m); renderResultsPage(); }
+        };
     }
 
-    async function renderResultsPage() {
+    function renderResultsPage() {
         const inv = parseFloat(localStorage.getItem("investment") || 0);
-        const scanner = await fetchScannerData();
+        const profit = (inv * 0.10).toFixed(2);
         
         appContainer.innerHTML = `
             <h2 style="color: #FF1493; text-align: center;">Results</h2>
-            <div style="display: flex; justify-content: space-between; color: white; font-size: 14px;">
-                <div style="text-align: left;">
-                    <div>Reset: ${localStorage.getItem("resetTime")}</div>
-                    <div>Inv: $${inv.toFixed(2)}</div>
-                    <br>
-                    <div>Currency: ${scanner.symbol}</div>
-                    <div>Price: $${scanner.price}</div>
-                    <div>24h: ${scanner.change}%</div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="color: white; font-size: 14px; line-height: 1.6;">
+                    <div style="color: #8A2BE2;">Reset time- ${localStorage.getItem("resetTime")}</div>
+                    <div style="color: #FF1493;">Investment entered- $${inv.toFixed(2)}</div>
+                    <div style="color: #00FF00;">Profit expected- $${profit}</div>
+                    <div style="color: #FF1493;">Currency- Determining...</div>
+                    <div style="color: #8A2BE2;">Current- Determining...</div>
+                    <div style="color: #008080;">Buy- Determining...</div>
+                    <div style="color: #008000;">Sell- Determining...</div>
+                    <div style="color: #008080;">Todays- Determining...</div>
+                    <div style="color: #8A2BE2;">Total- Determining...</div>
                 </div>
                 <div style="text-align: right; width: 120px;">
-                    <button id="time-reset-tab" style="width:100%; margin-bottom:5px;">Time reset</button>
-                    <button id="money-reset-tab" style="width:100%; margin-bottom:5px;">$$ Reset $$</button>
-                    <button id="new-pick-tab" style="width:100%;">New pick</button>
+                    <div style="color: #8A2BE2; font-size: 12px; margin-bottom: 5px;">Time until reset- 2hrs 30min</div>
+                    <button id="time-reset-tab" style="background: #CC0000; color: white; width: 100%; margin-bottom: 5px;">Time reset</button>
+                    <button id="money-reset-tab" style="background: #CC0000; color: white; width: 100%; margin-bottom: 5px;">$$ Reset $$</button>
+                    <button id="new-pick-tab" style="background: #CC0000; color: white; width: 100%;">New pick</button>
                 </div>
             </div>
+            <h2 style="color: #FF5F1F; text-align: center; margin-top: 20px;">Accuracy</h2>
         `;
-        document.getElementById("money-reset-tab").addEventListener("click", renderMoneyPage);
-        document.getElementById("time-reset-tab").addEventListener("click", () => { localStorage.clear(); renderHomePage(); });
-        document.getElementById("new-pick-tab").addEventListener("click", renderResultsPage);
+        document.getElementById("money-reset-tab").onclick = renderMoneyPage;
+        document.getElementById("time-reset-tab").onclick = () => { localStorage.clear(); renderHomePage(); };
     }
 
     renderHomePage();
