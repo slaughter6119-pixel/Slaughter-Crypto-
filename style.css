@@ -1,6 +1,6 @@
 body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; }
 #app-container { width: 100%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
 button { font-size: 20px; padding: 15px; width: 100%; margin: 10px 0; cursor: pointer; font-weight: bold; border: none; }
-input { font-size: 24px; padding: 10px; width: 100px !important; text-align: center; background: white !important; color: black !important; border: 2px solid white; margin: 10px 0; }
+input { font-size: 24px; padding: 10px; width: 100px !important; text-align: center; background: black !important; color: white !important; border: 1px solid white !important; margin: 10px 0; }
 #footer { position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; padding-bottom: 10px; }
 marquee { font-size: 18px; width: 100%; }
