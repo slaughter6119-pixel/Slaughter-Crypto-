@@ -6,37 +6,41 @@
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; }
         .header { text-align: center; color: #FF1493; font-size: 28px; margin-bottom: 20px; }
         
-        .results-section { display: flex; justify-content: space-between; align-items: flex-start; }
-        .left-col { width: 55%; }
+        .results-container { display: flex; justify-content: space-between; align-items: flex-start; }
+        .left-col { width: 55%; line-height: 1.8; }
         .right-col { width: 40%; display: flex; flex-direction: column; gap: 10px; }
         
+        /* Buttons with thin white border */
         .control-btn { padding: 10px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; cursor: pointer; }
         
-        .accuracy-title { text-align: center; color: #FF4500; font-size: 24px; font-weight: bold; margin: 20px 0; }
+        .accuracy-title { text-align: center; color: #FF4500; font-size: 24px; font-weight: bold; margin: 30px 0; }
         
+        /* Color Mapping */
         .pink { color: #FF1493; }
         .green { color: #00FF00; }
         .teal { color: #008080; }
+        .purple { color: #8A2BE2; }
         .white { color: white; }
+        .orange { color: #FF4500; }
         
-        marquee { margin-top: 20px; width: 100%; color: white; }
+        marquee { margin-top: 40px; width: 100%; color: white; }
     </style>
 </head>
 <body>
     <h1 class="header">Results</h1>
     
-    <div class="results-section">
+    <div class="results-container">
         <div class="left-col">
-            <p><span class="pink">Reset time-</span> 17:00</p>
-            <p><span class="pink">Time until reset-</span> 2hrs 30min</p>
+            <p><span class="pink">Reset time-</span> <span class="white">17:00</span></p>
+            <p><span class="pink">Time until reset-</span> <span class="white">2hrs 30min</span></p>
             <p class="pink">Investment entered-</p>
             <p class="white">$2.52</p>
-            <p class="green">Profit expected- $0.25</p>
+            <p class="green">Profit expected- <span class="white">$0.25</span></p>
             <br>
-            <p><span class="pink">Currency-</span> <span class="teal">Determining...</span></p>
-            <p><span class="pink">Current-</span> <span class="teal">Determining...</span></p>
-            <p><span class="pink">Buy-</span> <span class="teal">Determining...</span></p>
-            <p><span class="pink">Sell-</span> <span class="teal">Determining...</span></p>
+            <p><span class="pink">Currency-</span> <span class="white">Determining...</span></p>
+            <p><span class="pink">Current-</span> <span class="white">Determining...</span></p>
+            <p><span class="pink">Buy-</span> <span class="white">Determining...</span></p>
+            <p><span class="pink">Sell-</span> <span class="white">Determining...</span></p>
         </div>
         
         <div class="right-col">
@@ -49,8 +53,8 @@
     <div class="accuracy-title">Accuracy</div>
     
     <div>
-        <p><span class="teal">Todays-</span> Determining...</p>
-        <p><span class="teal">Total-</span> Determining...</p>
+        <p><span class="white">Todays-</span> <span class="white">Determining...</span></p>
+        <p><span class="purple">Total-</span> <span class="white">Determining...</span></p>
     </div>
 
     <marquee>
