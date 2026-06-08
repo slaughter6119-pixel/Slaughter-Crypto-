@@ -3,58 +3,62 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
-        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; }
-        .header { text-align: center; color: #FF1493; font-size: 28px; margin-bottom: 20px; }
+        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .page { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
+        .active { display: flex; }
         
-        .results-container { display: flex; justify-content: space-between; align-items: flex-start; }
-        .left-col { width: 55%; line-height: 1.8; }
-        .right-col { width: 40%; display: flex; flex-direction: column; gap: 10px; }
+        /* Layouts */
+        .header { color: #FF1493; font-size: 24px; margin: 5px 0; }
+        .results-grid { display: flex; justify-content: space-between; width: 100%; font-size: 14px; }
+        .left-col { width: 55%; }
+        .right-col { width: 40%; display: flex; flex-direction: column; gap: 5px; }
         
-        /* Buttons with thin white border */
-        .control-btn { padding: 10px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; cursor: pointer; }
+        /* Buttons */
+        .control-btn { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; cursor: pointer; }
+        .enter-btn { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin-top: 10px; }
         
-        .accuracy-title { text-align: center; color: #FF4500; font-size: 24px; font-weight: bold; margin: 30px 0; }
+        /* Accuracy and Marquee */
+        .accuracy-title { color: #FF4500; font-size: 20px; font-weight: bold; text-align: center; margin: 5px 0; }
+        marquee { margin-top: auto; font-size: 14px; }
         
-        /* Color Mapping */
-        .pink { color: #FF1493; }
-        .green { color: #00FF00; }
-        .teal { color: #008080; }
-        .purple { color: #8A2BE2; }
-        .white { color: white; }
-        .orange { color: #FF4500; }
-        
-        marquee { margin-top: 40px; width: 100%; color: white; }
+        /* Colors */
+        .pink { color: #FF1493; } .green { color: #00FF00; } .teal { color: #008080; } .purple { color: #8A2BE2; }
     </style>
 </head>
 <body>
-    <h1 class="header">Results</h1>
-    
-    <div class="results-container">
-        <div class="left-col">
-            <p><span class="pink">Reset time-</span> <span class="white">17:00</span></p>
-            <p><span class="pink">Time until reset-</span> <span class="white">2hrs 30min</span></p>
-            <p class="pink">Investment entered-</p>
-            <p class="white">$2.52</p>
-            <p class="green">Profit expected- <span class="white">$0.25</span></p>
-            <br>
-            <p><span class="pink">Currency-</span> <span class="white">Determining...</span></p>
-            <p><span class="pink">Current-</span> <span class="white">Determining...</span></p>
-            <p><span class="pink">Buy-</span> <span class="white">Determining...</span></p>
-            <p><span class="pink">Sell-</span> <span class="white">Determining...</span></p>
-        </div>
-        
-        <div class="right-col">
-            <button class="control-btn">Time reset</button>
-            <button class="control-btn">$$ Reset $$</button>
-            <button class="control-btn">New pick</button>
-        </div>
+
+    <!-- Home Page -->
+    <div id="home" class="page active">
+        <h1 class="pink">Welcome!</h1>
+        <h2 style="color: #FF5F1F;">Let's Slaughter Crypto</h2>
+        <button class="enter-btn" onclick="document.getElementById('home').classList.remove('active'); document.getElementById('results').classList.add('active');">I'm ready!</button>
     </div>
 
-    <div class="accuracy-title">Accuracy</div>
-    
-    <div>
-        <p><span class="white">Todays-</span> <span class="white">Determining...</span></p>
-        <p><span class="purple">Total-</span> <span class="white">Determining...</span></p>
+    <!-- Results Page -->
+    <div id="results" class="page">
+        <h1 class="header">Results</h1>
+        <div class="results-grid">
+            <div class="left-col">
+                <p><span class="pink">Reset time-</span> 17:00</p>
+                <p><span class="pink">Time until reset-</span> 2hrs 30min</p>
+                <p class="pink">Investment entered- <br> <span style="color:white;">$2.52</span></p>
+                <p class="green">Profit expected- $0.25</p>
+                <p class="pink">Currency- <span style="color:white;">Determining...</span></p>
+                <p class="pink">Current- <span style="color:white;">Determining...</span></p>
+                <p class="pink">Buy- <span style="color:white;">Determining...</span></p>
+                <p class="pink">Sell- <span style="color:white;">Determining...</span></p>
+            </div>
+            <div class="right-col">
+                <button class="control-btn">Time reset</button>
+                <button class="control-btn">$$ Reset $$</button>
+                <button class="control-btn">New pick</button>
+            </div>
+        </div>
+        <div class="accuracy-title">Accuracy</div>
+        <div style="width: 100%; font-size: 14px;">
+            <p>Todays- <span style="color:white;">Determining...</span></p>
+            <p><span class="purple">Total-</span> <span style="color:white;">Determining...</span></p>
+        </div>
     </div>
 
     <marquee>
