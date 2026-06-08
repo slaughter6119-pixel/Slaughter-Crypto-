@@ -33,8 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderMoneyPage() {
         appContainer.innerHTML = `
             <h1 style="color: #00FF00;">Money Page</h1>
-            <p>Investment amount (e.g. 10.00):</p>
-            <input type="number" step="0.01" id="money-input" placeholder="0.00" style="width: 150px !important; border: 2px solid #00FF00; color: #00FF00;">
+            <input type="number" step="0.01" id="money-input" placeholder="0.00">
             <button id="track-btn" style="background: #00FF00; color: black;">$ Enter</button>
         `;
     }
