@@ -3,60 +3,40 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
-        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 90vh; }
-        .page { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .button-row { display: flex; width: 100%; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 20px; font-size: 20px; border: none; font-weight: bold; color: white; cursor: pointer; }
-        .input-box { font-size: 32px; padding: 15px; width: 150px; text-align: center; background: black; color: white; border: 1px solid white; margin-top: 20px; }
-        .enter-btn { background-color: #008080; padding: 10px 30px; font-size: 18px; margin-top: 20px; border: none; color: white; font-weight: bold; cursor: pointer; }
-        
-        /* Results Page Styling */
+        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 95vh; }
+        .page { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
         .results-container { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px; }
-        .data-column { text-align: left; }
+        
+        /* Typography and Colors */
+        h1 { color: #FF1493; }
+        .teal-text { color: #008080; }
+        .data-column { text-align: left; font-size: 16px; line-height: 1.5; }
+        
+        /* Buttons */
         .control-column { display: flex; flex-direction: column; gap: 10px; width: 40%; }
-        .control-btn { padding: 10px; background-color: red; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 5px; }
-
-        #time-page, #money-page, #results-page { display: none; }
+        .control-btn { padding: 12px; background-color: #8B0000; border: none; color: white; font-weight: bold; border-radius: 5px; }
+        
+        /* Footer/Marquee */
+        marquee { margin-top: auto; padding-top: 20px; width: 100%; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="home-page" class="page">
-        <h2 style="color: #FF1493; margin-bottom: 5px;">Welcome!</h2>
-        <h1 style="color: #FF5F1F; text-align: center; margin-top: 0;">Let's Slaughter Crypto</h1>
-        <div class="button-row">
-            <button id="ready-btn" style="background-color: #FF5F1F;" onclick="document.getElementById('home-page').style.display='none'; document.getElementById('time-page').style.display='flex';">I'm ready!</button>
-            <button id="not-yet-btn" style="background-color: #FF1493;" onclick="document.body.innerHTML='<h1 style=\'color: white; text-align: center;\'>Application Closed</h1>';">Not yet</button>
-        </div>
-    </div>
-
-    <div id="time-page" class="page">
-        <h1 style="color: #FF1493;">Time Page</h1>
-        <input type="text" id="time-input" class="input-box" placeholder="00:00" maxlength="5" oninput="let v = this.value.replace(/\D/g, ''); if(v.length > 2) v = v.substring(0,2) + ':' + v.substring(2,4); this.value = v;">
-        <button class="enter-btn" onclick="document.getElementById('time-page').style.display='none'; document.getElementById('money-page').style.display='flex';">Enter Time</button>
-    </div>
-
-    <div id="money-page" class="page">
-        <h1 style="color: #008080;">Money Page</h1>
-        <input type="number" id="money-input" class="input-box" placeholder="$0.00">
-        <button class="enter-btn" onclick="document.getElementById('money-page').style.display='none'; document.getElementById('results-page').style.display='flex';">Enter Amount</button>
-    </div>
-
     <div id="results-page" class="page">
-        <h1 style="color: #FF1493;">Results</h1>
+        <h1 class="teal-text">Results</h1>
         <div class="results-container">
-            <div class="data-column" style="font-size: 14px;">
+            <div class="data-column">
                 <p>Reset time: 17:00</p>
                 <p>Investment: $2.52</p>
                 <p style="color: #00FF00;">Profit: $0.25</p>
                 <br>
-                <p>Currency: Determining...</p>
-                <p>Current: Determining...</p>
-                <p>Buy: Determining...</p>
-                <p>Sell: Determining...</p>
+                <p>Currency: <span class="teal-text">Determining...</span></p>
+                <p>Current: <span class="teal-text">Determining...</span></p>
+                <p>Buy: <span class="teal-text">Determining...</span></p>
+                <p>Sell: <span class="teal-text">Determining...</span></p>
                 <br>
-                <p>Todays: Determining...</p>
-                <p>Total: Determining...</p>
+                <p>Todays: <span class="teal-text">Determining...</span></p>
+                <p>Total: <span class="teal-text">Determining...</span></p>
             </div>
             <div class="control-column">
                 <button class="control-btn">Time reset</button>
