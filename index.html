@@ -7,19 +7,19 @@
         .page { width: 100%; display: flex; flex-direction: column; align-items: center; }
         .button-row { display: flex; width: 100%; gap: 10px; margin-top: 20px; }
         button { flex: 1; padding: 20px; font-size: 20px; border: none; font-weight: bold; color: white; cursor: pointer; }
-        .time-box { font-size: 32px; padding: 15px; width: 120px; text-align: center; background: black; color: white; border: 1px solid white; margin-top: 20px; }
+        .input-box { font-size: 32px; padding: 15px; width: 150px; text-align: center; background: black; color: white; border: 1px solid white; margin-top: 20px; }
         .enter-btn { background-color: #008080; padding: 10px 30px; font-size: 18px; margin-top: 20px; border: none; color: white; font-weight: bold; cursor: pointer; }
         marquee { margin-top: auto; padding-top: 20px; width: 100%; }
-        #time-page { display: none; }
+        #time-page, #money-page, #results-page { display: none; }
     </style>
     <script>
-        function checkTime() {
-            const timeValue = document.getElementById("time-input").value;
-            if (timeValue.length === 5) {
-                alert("Time saved: " + timeValue);
-            } else {
-                alert("Please enter a valid time (00:00)");
-            }
+        function goToMoney() {
+            document.getElementById('time-page').style.display='none';
+            document.getElementById('money-page').style.display='flex';
+        }
+        function goToResults() {
+            document.getElementById('money-page').style.display='none';
+            document.getElementById('results-page').style.display='flex';
         }
     </script>
 </head>
@@ -36,13 +36,27 @@
 
     <div id="time-page" class="page">
         <h1 style="color: #FF1493;">Time Page</h1>
-        <input type="text" id="time-input" class="time-box" placeholder="00:00" maxlength="5" oninput="let v = this.value.replace(/\D/g, ''); if(v.length > 2) v = v.substring(0,2) + ':' + v.substring(2,4); this.value = v;">
-        <button id="submit-btn" class="enter-btn" onclick="checkTime()">Enter</button>
+        <input type="text" id="time-input" class="input-box" placeholder="00:00" maxlength="5" oninput="let v = this.value.replace(/\D/g, ''); if(v.length > 2) v = v.substring(0,2) + ':' + v.substring(2,4); this.value = v;">
+        <button class="enter-btn" onclick="goToMoney()">Enter Time</button>
+    </div>
+
+    <div id="money-page" class="page">
+        <h1 style="color: #008080;">Money Page</h1>
+        <input type="number" id="money-input" class="input-box" placeholder="$0.00">
+        <button class="enter-btn" onclick="goToResults()">Enter Amount</button>
+    </div>
+
+    <div id="results-page" class="page">
+        <h1 style="color: #FF5F1F;">Results Page</h1>
+        <div id="results" style="width: 100%; text-align: center;">
+            <p>Currency: [Name]</p>
+            <p>Accuracy: 0%</p>
+        </div>
     </div>
 
     <marquee>
-        <span style="color: #FF5F1F;">Slaughter's</span>
-        <span style="color: #FF1493;">Merilee,</span>
+        <span style="color: #FF1493;">Slaughter's</span>
+        <span style="color: #FF5F1F;">Merilee,</span>
         <span style="color: #008080;">Kyrah,</span>
         <span style="color: #8A2BE2;">and Zaylee!</span> ✨
     </marquee>
