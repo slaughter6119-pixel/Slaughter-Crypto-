@@ -4,26 +4,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; }
-        .header { text-align: center; color: #FF1493; font-size: 24px; margin-bottom: 10px; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .main-layout { display: flex; justify-content: space-between; }
+        .header { text-align: center; color: #FF1493; font-size: 28px; margin-bottom: 20px; }
+        .top-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 16px; }
+        .layout-container { display: flex; justify-content: space-between; }
         .left-col { width: 55%; }
         .right-col { width: 40%; display: flex; flex-direction: column; gap: 10px; }
-        .control-btn { padding: 10px; background-color: #8B0000; border: none; color: white; font-weight: bold; }
-        .accuracy-section { text-align: center; margin-top: 10px; color: #FF5F1F; font-weight: bold; }
+        .control-btn { padding: 12px; background-color: #8B0000; border: none; color: white; font-weight: bold; }
+        
+        /* Accuracy Section */
+        .accuracy-title { text-align: center; color: #FF4500; font-size: 24px; font-weight: bold; margin: 30px 0; }
+        
+        /* Colors */
         .teal { color: #008080; }
         .green { color: #00FF00; }
+        .pink { color: #FF1493; }
     </style>
 </head>
 <body>
     <h1 class="header">Results</h1>
     
-    <div class="top-row">
+    <div class="top-info">
         <span>Reset time: 17:00</span>
         <span>Time until reset: 2hrs 30min</span>
     </div>
 
-    <div class="main-layout">
+    <div class="layout-container">
         <div class="left-col">
             <p>Investment: $2.52</p>
             <p class="green">Profit: $0.25</p>
@@ -32,11 +37,6 @@
             <p>Current: <span class="teal">Determining...</span></p>
             <p>Buy: <span class="teal">Determining...</span></p>
             <p>Sell: <span class="teal">Determining...</span></p>
-            <br>
-            <div class="accuracy-section">Accuracy</div>
-            <br>
-            <p>Todays: <span class="teal">Determining...</span></p>
-            <p>Total: <span class="teal">Determining...</span></p>
         </div>
         
         <div class="right-col">
@@ -44,6 +44,13 @@
             <button class="control-btn">$$ Reset $$</button>
             <button class="control-btn">New pick</button>
         </div>
+    </div>
+
+    <div class="accuracy-title">Accuracy</div>
+    
+    <div>
+        <p>Todays: <span class="teal">Determining...</span></p>
+        <p>Total: <span class="teal">Determining...</span></p>
     </div>
 </body>
 </html>
