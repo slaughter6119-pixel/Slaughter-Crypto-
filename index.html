@@ -3,11 +3,11 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
-        /* Force everything to be black and properly spaced */
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 90vh; }
         #content { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
         .button-row { display: flex; width: 100%; gap: 10px; margin-top: 20px; }
         button { flex: 1; padding: 20px; font-size: 20px; border: none; font-weight: bold; color: white; cursor: pointer; }
+        input { font-size: 32px; padding: 15px; width: 120px; text-align: center; background: black; color: white; border: 1px solid white; margin-top: 20px; }
         marquee { margin-top: auto; padding-top: 20px; width: 100%; }
     </style>
 </head>
@@ -32,8 +32,20 @@
 
     <script>
         document.getElementById("ready-btn").onclick = function() {
-            document.getElementById("content").innerHTML = '<h1 style="color: #FF1493; text-align: center;">Time Page</h1>';
+            document.getElementById("content").innerHTML = `
+                <h1 style="color: #FF1493;">Time Page</h1>
+                <input type="text" id="time-input" placeholder="00:00" maxlength="5">
+                <button id="time-submit" style="background-color: #008080; margin-top: 20px; width: 120px;">Enter</button>
+            `;
+            
+            // Logic for 00:00 formatting
+            document.getElementById("time-input").oninput = function(e) {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 2) v = v.substring(0, 2) + ':' + v.substring(2, 4);
+                e.target.value = v;
+            };
         };
+        
         document.getElementById("not-yet-btn").onclick = function() {
             document.getElementById("content").innerHTML = '<h1 style="color: white; text-align: center;">Application Closed</h1>';
         };
