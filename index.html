@@ -7,21 +7,21 @@
         .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; text-align: center; }
         .active { display: flex; }
         
-        /* Buttons */
+        .header-pink { color: #FF1493; font-size: 28px; margin-top: 10px; }
         .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
         .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; }
         
-        /* Layouts */
-        .header-pink { color: #FF1493; font-size: 28px; margin: 10px 0; }
-        .results-box { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; text-align: left; font-size: 13px; }
-        .input-box { background-color: black; border: 1px solid #FF1493; color: white; padding: 10px; width: 80%; text-align: center; font-size: 18px; margin: 10px 0; }
+        .results-grid { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; text-align: left; font-size: 13px; margin-top: 10px; }
+        .time-input { width: 60px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
+        .money-input { width: 50px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
         
         marquee { width: 100%; margin-top: auto; padding: 10px 0; font-size: 14px; color: white; }
     </style>
 </head>
 <body>
 
+    <!-- Home Page -->
     <div id="home" class="page active">
         <h1 class="header-pink">Welcome!</h1>
         <h2 style="color: #FF4500;">Let's Slaughter Crypto</h2>
@@ -34,36 +34,40 @@
         <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
     </div>
 
+    <!-- Time Page -->
     <div id="time" class="page">
         <h1 class="header-pink">Time Page</h1>
-        <p>This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
-        <input type="text" class="input-box" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
+        <p style="font-size: 14px;">This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
+        <input type="text" class="time-input" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
         <button class="btn-ready" onclick="showPage('money')">Time</button>
         <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
     </div>
 
+    <!-- Money Page -->
     <div id="money" class="page">
         <h1 style="color: #00FF00;">Money Page</h1>
         <p>How much to invest?</p>
-        <input type="text" class="input-box" placeholder="$ 10.00">
+        <input type="text" class="money-input" placeholder="$ 10.">
         <button class="btn-ready" onclick="showPage('results')">$ Enter</button>
         <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
     </div>
 
+    <!-- Results Page -->
     <div id="results" class="page">
         <h1 class="header-pink">Results</h1>
-        <div class="results-box">
+        <div class="results-grid">
             <div style="width: 55%;">
                 <p><span style="color:#8A2BE2;">Reset time-</span> 18:00</p>
                 <p><span style="color:#FF1493;">Investment entered-</span> $10.00</p>
                 <p><span style="color:#00FF00;">Profit expected-</span> $1.00</p>
+                <p style="color:#8A2BE2;">Countdown to reset- 2hr 30m</p>
                 <br>
                 <p><span style="color:#FF69B4;">Currency-</span> Determining...</p>
                 <p><span style="color:#8A2BE2;">Current-</span> Determining...</p>
                 <p><span style="color:#00BFFF;">Buy-</span> Determining...</p>
                 <p><span style="color:#00FF00;">Sell-</span> Determining...</p>
             </div>
-            <div style="width: 40%; display: flex; flex-direction: column; gap: 8px;">
+            <div style="width: 40%; display: flex; flex-direction: column; gap: 8px; margin-top: 50px;">
                 <button class="btn-control">Time reset</button>
                 <button class="btn-control">$$ Reset $$</button>
                 <button class="btn-control">New pick</button>
