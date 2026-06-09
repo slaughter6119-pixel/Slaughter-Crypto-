@@ -12,11 +12,12 @@
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
         .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; }
         
-        .results-grid { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; text-align: left; font-size: 13px; margin-top: 10px; }
-        .time-input { width: 60px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
-        .money-input { width: 50px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
+        .results-grid { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; text-align: left; font-size: 13px; margin-top: 50px; }
+        .time-input { width: 50px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
+        .money-input { width: 40px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
         
-        marquee { width: 100%; margin-top: auto; padding: 10px 0; font-size: 14px; color: white; }
+        .marquee-container { width: 100%; margin-top: auto; padding: 10px 0; }
+        marquee { font-size: 14px; color: white; }
     </style>
 </head>
 <body>
@@ -31,7 +32,7 @@
         </div>
         <p style="font-size: 14px; margin: 15px 0;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
         <p style="font-size: 14px;">Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨</p>
-        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <div class="marquee-container"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <!-- Time Page -->
@@ -40,7 +41,7 @@
         <p style="font-size: 14px;">This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
         <input type="text" class="time-input" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
         <button class="btn-ready" onclick="showPage('money')">Time</button>
-        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <div class="marquee-container"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <!-- Money Page -->
@@ -49,7 +50,7 @@
         <p>How much to invest?</p>
         <input type="text" class="money-input" placeholder="$ 10.">
         <button class="btn-ready" onclick="showPage('results')">$ Enter</button>
-        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <div class="marquee-container"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <!-- Results Page -->
@@ -58,16 +59,16 @@
         <div class="results-grid">
             <div style="width: 55%;">
                 <p><span style="color:#8A2BE2;">Reset time-</span> 18:00</p>
+                <p style="color:#8A2BE2;">Countdown to reset- 2hr 30m</p>
                 <p><span style="color:#FF1493;">Investment entered-</span> $10.00</p>
                 <p><span style="color:#00FF00;">Profit expected-</span> $1.00</p>
-                <p style="color:#8A2BE2;">Countdown to reset- 2hr 30m</p>
                 <br>
                 <p><span style="color:#FF69B4;">Currency-</span> Determining...</p>
                 <p><span style="color:#8A2BE2;">Current-</span> Determining...</p>
                 <p><span style="color:#00BFFF;">Buy-</span> Determining...</p>
                 <p><span style="color:#00FF00;">Sell-</span> Determining...</p>
             </div>
-            <div style="width: 40%; display: flex; flex-direction: column; gap: 8px; margin-top: 50px;">
+            <div style="width: 40%; display: flex; flex-direction: column; gap: 8px;">
                 <button class="btn-control">Time reset</button>
                 <button class="btn-control">$$ Reset $$</button>
                 <button class="btn-control">New pick</button>
@@ -78,7 +79,7 @@
             <p>Todays- Determining...</p>
             <p><span style="color:#8A2BE2;">Total-</span> Determining...</p>
         </div>
-        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <div class="marquee-container"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <script>
