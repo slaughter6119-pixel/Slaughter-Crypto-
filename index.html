@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 10px; overflow-y: auto; }
+        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 10px; overflow-y: auto; position: relative; }
         .active { display: flex; }
         .text-center { text-align: center; }
 
@@ -27,7 +27,6 @@
 </head>
 <body>
 
-    <!-- Home Page -->
     <div id="home" class="page active">
         <h1 class="header-pink">Welcome!</h1>
         <h2 style="color: #FF4500;">Let's Slaughter Crypto</h2>
@@ -36,10 +35,8 @@
             <button class="btn-not" onclick="alert('Application closed');">Not yet</button>
         </div>
         <p style="font-size: 14px; margin: 15px 0;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
-        <p style="font-size: 14px;">Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨</p>
     </div>
 
-    <!-- Time Page -->
     <div id="time" class="page text-center">
         <h1 class="header-pink">Time Page</h1>
         <p style="font-size: 14px;">This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
@@ -47,7 +44,6 @@
         <button class="btn-ready" onclick="showPage('money')">Time</button>
     </div>
 
-    <!-- Money Page -->
     <div id="money" class="page text-center">
         <h1 style="color: #00FF00;">Money Page</h1>
         <p>How much to invest?</p>
@@ -55,7 +51,6 @@
         <button class="btn-ready" onclick="showPage('results')">$ Enter</button>
     </div>
 
-    <!-- Results Page -->
     <div id="results" class="page">
         <h1 class="header-pink">Results</h1>
         <div class="results-container">
@@ -87,10 +82,9 @@
         </div>
     </div>
 
-    <!-- Persistent Fixed Footer -->
     <div class="footer-fixed">
         <marquee direction="left" scrollamount="5">
-            Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
+            <span style="color:#FF4500;">Slaughters</span> inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
         </marquee>
     </div>
 
