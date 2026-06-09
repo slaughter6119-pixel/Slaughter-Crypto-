@@ -7,14 +7,17 @@
         .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; text-align: center; }
         .active { display: flex; }
         
-        .header-pink { color: #FF1493; font-size: 24px; margin: 10px 0; }
-        .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; }
-        .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; }
+        /* Buttons */
+        .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
+        .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
+        .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; }
         
-        .results-box { display: flex; justify-content: space-between; width: 100%; text-align: left; font-size: 13px; }
-        .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 100%; }
+        /* Layouts */
+        .header-pink { color: #FF1493; font-size: 28px; margin: 10px 0; }
+        .results-box { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; text-align: left; font-size: 13px; }
+        .input-box { background-color: black; border: 1px solid #FF1493; color: white; padding: 10px; width: 80%; text-align: center; font-size: 18px; margin: 10px 0; }
         
-        marquee { width: 100%; margin-top: auto; padding: 10px 0; font-size: 14px; }
+        marquee { width: 100%; margin-top: auto; padding: 10px 0; font-size: 14px; color: white; }
     </style>
 </head>
 <body>
@@ -26,22 +29,25 @@
             <button class="btn-ready" onclick="showPage('time')">I'm ready!</button>
             <button class="btn-not" onclick="window.close()">Not yet</button>
         </div>
-        <p style="margin-top:15px; font-size: 14px;">Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨</p>
-        <marquee>Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <p style="font-size: 14px; margin: 15px 0;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
+        <p style="font-size: 14px;">Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨</p>
+        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
     </div>
 
     <div id="time" class="page">
         <h1 class="header-pink">Time Page</h1>
-        <input type="text" class="btn-control" style="text-align:center; background:black;" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
+        <p>This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
+        <input type="text" class="input-box" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
         <button class="btn-ready" onclick="showPage('money')">Time</button>
-        <marquee>Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
     </div>
 
     <div id="money" class="page">
         <h1 style="color: #00FF00;">Money Page</h1>
-        <input type="text" class="btn-control" style="text-align:center; background:black;" placeholder="$ 10.00">
+        <p>How much to invest?</p>
+        <input type="text" class="input-box" placeholder="$ 10.00">
         <button class="btn-ready" onclick="showPage('results')">$ Enter</button>
-        <marquee>Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
     </div>
 
     <div id="results" class="page">
@@ -68,7 +74,7 @@
             <p>Todays- Determining...</p>
             <p><span style="color:#8A2BE2;">Total-</span> Determining...</p>
         </div>
-        <marquee>Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
+        <marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee>
     </div>
 
     <script>
