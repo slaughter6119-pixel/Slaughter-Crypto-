@@ -3,8 +3,8 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
-        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
-        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 10px; overflow-y: auto; }
+        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 10px; overflow-y: auto; position: relative; }
         .active { display: flex; }
         
         .header-pink { color: #FF1493; font-size: 28px; margin: 10px 0; }
@@ -12,11 +12,11 @@
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
         .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; }
         
-        /* Footer and Marquee Styling */
-        footer { width: 100%; background: black; padding: 10px 0; border-top: 1px solid #333; margin-top: auto; flex-shrink: 0; }
+        /* Footer fixed to bottom */
+        .footer-marquee { position: absolute; bottom: 0; left: 0; width: 100%; background: black; padding: 10px 0; border-top: 1px solid #333; z-index: 10; }
         marquee { font-size: 14px; color: white; display: block; }
 
-        /* Centering and Layout */
+        /* Layouts */
         .text-center { text-align: center; }
         .results-container { width: 100%; margin-top: 10px; }
         .top-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 20px; }
@@ -37,7 +37,7 @@
         </div>
         <p style="font-size: 14px; margin: 15px 0;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
         <p style="font-size: 14px;">Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨</p>
-        <footer><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
+        <div class="footer-marquee"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <!-- Time Page -->
@@ -46,7 +46,7 @@
         <p style="font-size: 14px;">This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
         <input type="text" class="time-input" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
         <button class="btn-ready" onclick="showPage('money')">Time</button>
-        <footer><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
+        <div class="footer-marquee"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <!-- Money Page -->
@@ -55,7 +55,7 @@
         <p>How much to invest?</p>
         <input type="text" class="money-input" placeholder="$ 10.">
         <button class="btn-ready" onclick="showPage('results')">$ Enter</button>
-        <footer><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
+        <div class="footer-marquee"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <!-- Results Page -->
@@ -88,7 +88,7 @@
             <p>Todays- Determining...</p>
             <p><span style="color:#8A2BE2;">Total-</span> Determining...</p>
         </div>
-        <footer><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
+        <div class="footer-marquee"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></div>
     </div>
 
     <script>
