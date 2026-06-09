@@ -12,7 +12,6 @@
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
         .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; }
         
-        /* Layouts */
         .results-container { width: 100%; margin-top: 10px; }
         .top-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 20px; }
         .mid-row { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -31,10 +30,11 @@
         <h2 style="color: #FF4500;">Let's Slaughter Crypto</h2>
         <div>
             <button class="btn-ready" onclick="showPage('time')">I'm ready!</button>
-            <button class="btn-not" onclick="alert('Application closed'); window.close();">Not yet</button>
+            <button class="btn-not" onclick="alert('Application closed');">Not yet</button>
         </div>
         <p style="font-size: 14px; margin: 15px 0;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
         <p style="font-size: 14px;">Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨</p>
+        <footer><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
     </div>
 
     <div id="time" class="page">
@@ -42,6 +42,7 @@
         <p style="font-size: 14px;">This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
         <input type="text" class="time-input" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
         <button class="btn-ready" onclick="showPage('money')">Time</button>
+        <footer style="margin-top: auto;"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
     </div>
 
     <div id="money" class="page">
@@ -49,6 +50,7 @@
         <p>How much to invest?</p>
         <input type="text" class="money-input" placeholder="$ 10.">
         <button class="btn-ready" onclick="showPage('results')">$ Enter</button>
+        <footer style="margin-top: auto;"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
     </div>
 
     <div id="results" class="page">
@@ -80,9 +82,8 @@
             <p>Todays- Determining...</p>
             <p><span style="color:#8A2BE2;">Total-</span> Determining...</p>
         </div>
+        <footer style="margin-top: auto;"><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
     </div>
-
-    <footer><marquee direction="left" scrollamount="5">Slaughter's Merilee, Kyrah, and Zaylee! ✨</marquee></footer>
 
     <script>
         function showPage(id) {
