@@ -3,50 +3,50 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
-        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .page { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
+        body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 10px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .page { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; }
         .active { display: flex; }
         
-        /* Layouts */
-        .header { color: #FF1493; font-size: 24px; margin: 5px 0; }
-        .results-grid { display: flex; justify-content: space-between; width: 100%; font-size: 14px; }
-        .left-col { width: 55%; }
-        .right-col { width: 40%; display: flex; flex-direction: column; gap: 5px; }
+        /* Home Styling */
+        .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin-top: 20px; }
         
-        /* Buttons */
-        .control-btn { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; cursor: pointer; }
-        .enter-btn { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin-top: 10px; }
+        /* Results Styling */
+        .header { color: #FF1493; font-size: 24px; margin-bottom: 10px; }
+        .main-layout { display: flex; justify-content: space-between; width: 100%; align-items: flex-start; }
+        .left-col { width: 55%; text-align: left; font-size: 13px; }
+        .right-col { width: 40%; display: flex; flex-direction: column; gap: 8px; }
+        .control-btn { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; }
+        .accuracy-title { color: #FF4500; font-size: 22px; font-weight: bold; margin: 10px 0; }
         
-        /* Accuracy and Marquee */
-        .accuracy-title { color: #FF4500; font-size: 20px; font-weight: bold; text-align: center; margin: 5px 0; }
-        marquee { margin-top: auto; font-size: 14px; }
-        
-        /* Colors */
-        .pink { color: #FF1493; } .green { color: #00FF00; } .teal { color: #008080; } .purple { color: #8A2BE2; }
+        /* Marquee */
+        marquee { width: 100%; margin-top: auto; font-size: 13px; }
     </style>
 </head>
 <body>
 
     <!-- Home Page -->
     <div id="home" class="page active">
-        <h1 class="pink">Welcome!</h1>
-        <h2 style="color: #FF5F1F;">Let's Slaughter Crypto</h2>
-        <button class="enter-btn" onclick="document.getElementById('home').classList.remove('active'); document.getElementById('results').classList.add('active');">I'm ready!</button>
+        <h1 style="color: #FF1493;">Welcome!</h1>
+        <h2 style="color: #FF4500;">Let's Slaughter Crypto</h2>
+        <button class="btn-ready" onclick="document.getElementById('home').classList.remove('active'); document.getElementById('results').classList.add('active');">I'm ready!</button>
+        <p style="margin-top: 20px; font-size: 12px; color: white;">
+            Slaughters inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
+        </p>
     </div>
 
     <!-- Results Page -->
     <div id="results" class="page">
         <h1 class="header">Results</h1>
-        <div class="results-grid">
+        <div class="main-layout">
             <div class="left-col">
-                <p><span class="pink">Reset time-</span> 17:00</p>
-                <p><span class="pink">Time until reset-</span> 2hrs 30min</p>
-                <p class="pink">Investment entered- <br> <span style="color:white;">$2.52</span></p>
-                <p class="green">Profit expected- $0.25</p>
-                <p class="pink">Currency- <span style="color:white;">Determining...</span></p>
-                <p class="pink">Current- <span style="color:white;">Determining...</span></p>
-                <p class="pink">Buy- <span style="color:white;">Determining...</span></p>
-                <p class="pink">Sell- <span style="color:white;">Determining...</span></p>
+                <p><span style="color:#FF1493;">Reset time-</span> 17:00</p>
+                <p><span style="color:#FF1493;">Time until reset-</span> 2hrs 30min</p>
+                <p style="color:#FF1493;">Investment entered-<br><span style="color:white;">$2.52</span></p>
+                <p style="color:#00FF00;">Profit expected- <span style="color:white;">$0.25</span></p>
+                <p style="color:#FF1493;">Currency- <span style="color:white;">Determining...</span></p>
+                <p style="color:#FF1493;">Current- <span style="color:white;">Determining...</span></p>
+                <p style="color:#FF1493;">Buy- <span style="color:white;">Determining...</span></p>
+                <p style="color:#FF1493;">Sell- <span style="color:white;">Determining...</span></p>
             </div>
             <div class="right-col">
                 <button class="control-btn">Time reset</button>
@@ -55,18 +55,18 @@
             </div>
         </div>
         <div class="accuracy-title">Accuracy</div>
-        <div style="width: 100%; font-size: 14px;">
+        <div style="width: 100%; text-align: left; font-size: 13px;">
             <p>Todays- <span style="color:white;">Determining...</span></p>
-            <p><span class="purple">Total-</span> <span style="color:white;">Determining...</span></p>
+            <p><span style="color:#8A2BE2;">Total-</span> <span style="color:white;">Determining...</span></p>
         </div>
+        <marquee>
+            <span style="color: #FF5F1F;">Slaughter's</span>
+            <span style="color: #FF1493;">Merilee,</span>
+            <span style="color: #008080;">Kyrah,</span>
+            <span style="color: white;">and</span>
+            <span style="color: #8A2BE2;">Zaylee!</span> ✨
+        </marquee>
     </div>
 
-    <marquee>
-        <span style="color: #FF5F1F;">Slaughter's</span>
-        <span style="color: #FF1493;">Merilee,</span>
-        <span style="color: #008080;">Kyrah,</span>
-        <span style="color: white;">and</span>
-        <span style="color: #8A2BE2;">Zaylee!</span> ✨
-    </marquee>
 </body>
 </html>
