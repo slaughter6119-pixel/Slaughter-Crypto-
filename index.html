@@ -2,83 +2,133 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Let's Slaughter Crypto</title>
     <style>
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 10px; overflow-y: auto; position: relative; }
+        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 15px; overflow-y: auto; position: relative; padding-bottom: 50px; }
         .active { display: flex; }
         .text-center { text-align: center; }
 
-        .header-pink { color: #FF1493; font-size: 28px; margin: 10px 0; }
-        .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
-        .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; }
-        .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; }
+        .header-pink { color: #FF1493; font-size: 28px; margin: 10px 0; text-align: center; font-weight: bold; width: 100%; }
+        .header-orange { color: #FF4500; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; text-decoration: underline; text-decoration-color: #FF4500; }
+        .header-currency { color: #8A2BE2; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; text-decoration: underline; text-decoration-color: #8A2BE2; }
+        
+        .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; border-radius: 5px; }
+        .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; border-radius: 5px; }
+        .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; margin-top: 15px; border-radius: 5px; }
         
         /* Fixed Footer Marquee */
         .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; background: black; padding: 10px 0; border-top: 1px solid #333; z-index: 100; }
         marquee { font-size: 14px; color: white; display: block; width: 100%; }
 
-        /* Layouts */
-        .results-container { width: 100%; margin-top: 10px; }
-        .top-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 20px; }
-        .mid-row { display: flex; justify-content: space-between; align-items: flex-start; }
-        .time-input { width: 55px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
-        .money-input { width: 45px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; }
+        /* App Icon Styling */
+        .icon-container { width: 80px; height: 80px; border: 2px solid white; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 15px auto; background-color: #111; }
+        .icon-text { color: #FF4500; font-size: 36px; font-weight: bold; font-family: 'Courier New', monospace; }
+        
+        .money-input { width: 60px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; font-size: 16px; margin-bottom: 15px; }
+
+        /* Results Layout Styling */
+        .results-container { width: 100%; max-width: 400px; margin: 0 auto; }
+        .flex-row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 10px; }
+        .flex-col { display: flex; flex-direction: column; width: 48%; }
+        
+        /* Typography */
+        .neon-label { color: #00BFFF; font-size: 14px; }
+        .neon-label-pink { color: #FF69B4; font-size: 14px; }
+        .neon-label-green { color: #00FF00; font-size: 14px; }
+        .white-data { color: #FFFFFF; font-size: 14px; font-weight: bold; }
+        
+        .accuracy-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 8px; font-size: 16px; }
+        .accuracy-label { color: #00BFFF; text-align: left; }
+        .accuracy-data { color: #FFFFFF; font-weight: bold; text-align: right; }
+
+        .log-box { width: 100%; max-height: 80px; background: #111; border: 1px solid #333; font-size: 11px; color: #00FF00; overflow-y: auto; text-align: left; padding: 5px; margin-top: 20px; font-family: monospace; }
     </style>
 </head>
 <body>
 
-    <div id="home" class="page active">
+    <div id="home" class="page active text-center">
+        <div class="icon-container">
+            <div class="icon-text">SC</div>
+        </div>
         <h1 class="header-pink">Welcome!</h1>
         <h2 style="color: #FF4500;">Let's Slaughter Crypto</h2>
         <div>
-            <button class="btn-ready" onclick="showPage('time')">I'm ready!</button>
-            <button class="btn-not" onclick="alert('Application closed');">Not yet</button>
+            <button class="btn-ready" onclick="goToResults()">I'm ready!</button>
+            <button class="btn-not" onclick="showPage('money')">Not yet</button>
         </div>
-        <p style="font-size: 14px; margin: 15px 0;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
-    </div>
-
-    <div id="time" class="page text-center">
-        <h1 class="header-pink">Time Page</h1>
-        <p style="font-size: 14px;">This is reset time! Enter the time you want to reset currency and accuracy in 24 hour format.</p>
-        <input type="text" class="time-input" maxlength="5" placeholder="18:00" oninput="if(this.value.length==2) this.value+=':'">
-        <button class="btn-ready" onclick="showPage('money')">Time</button>
+        <p style="font-size: 14px; margin: 15px 0; color: #ccc;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
     </div>
 
     <div id="money" class="page text-center">
-        <h1 style="color: #00FF00;">Money Page</h1>
-        <p>How much to invest?</p>
-        <input type="text" class="money-input" placeholder="$ 10.">
-        <button class="btn-ready" onclick="showPage('results')">$ Enter</button>
+        <h1 style="color: #00FF00; margin-top: 20px;">Money Page</h1>
+        <p style="color: #ccc; margin-bottom: 10px;">How much to invest?</p>
+        <input type="text" id="investmentInput" class="money-input" placeholder="$ 10.">
+        <button class="btn-ready" onclick="saveMoneyAndStart()">$ Enter</button>
+        <button class="btn-not" onclick="showPage('home')" style="margin-top: 20px;">Back</button>
     </div>
 
     <div id="results" class="page">
-        <h1 class="header-pink">Results</h1>
         <div class="results-container">
-            <div class="top-row">
-                <p><span style="color:#8A2BE2;">Reset time-</span> 18:00</p>
-                <p><span style="color:#8A2BE2;">Countdown to reset-</span> 2hr 30m</p>
+            
+            <div class="header-pink" style="text-decoration: underline; text-decoration-color: #FF1493;">Results</div>
+            
+            <div class="flex-row" style="margin-bottom: 20px;">
+                <span><span class="neon-label-pink">Countdown to sell-</span> <span class="white-data" id="lblCountdown">--hr --min</span></span>
+                <span><span class="neon-label-green">Profit expected-</span> <span class="white-data">$<span id="lblProfit">0.00</span></span></span>
             </div>
-            <div class="mid-row">
-                <div style="width: 60%; font-size: 13px;">
-                    <p><span style="color:#FF1493;">Investment entered-</span> $10.00</p>
-                    <p><span style="color:#00FF00;">Profit expected-</span> $1.00</p>
-                    <br>
-                    <p><span style="color:#FF69B4;">Currency-</span> Determining...</p>
-                    <p><span style="color:#8A2BE2;">Current-</span> Determining...</p>
-                    <p><span style="color:#00BFFF;">Buy-</span> Determining...</p>
-                    <p><span style="color:#00FF00;">Sell-</span> Determining...</p>
+
+            <div class="header-currency">Currency</div>
+            
+            <div class="flex-row">
+                <div class="flex-col">
+                    <span class="neon-label">Now-</span>
+                    <span class="white-data" id="lblNowName">Determining...</span>
+                    
+                    <span class="neon-label" style="margin-top: 10px;">Sell price-</span>
+                    <span class="white-data">$<span id="lblNowSell">0.00</span></span>
+                    
+                    <span class="neon-label" style="margin-top: 10px;">Current-</span>
+                    <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
-                <div style="width: 40%; display: flex; flex-direction: column; gap: 8px;">
-                    <button class="btn-control">Time reset</button>
-                    <button class="btn-control">$$ Reset $$</button>
-                    <button class="btn-control">New pick</button>
+                
+                <div class="flex-col">
+                    <span class="neon-label">Next-</span>
+                    <span class="white-data" id="lblNextName">Scanning...</span>
+                    
+                    <span class="neon-label" style="margin-top: 10px;">Buy price-</span>
+                    <span class="white-data">$<span id="lblNextBuy">0.00</span></span>
+                    
+                    <span class="neon-label" style="margin-top: 10px;">Current-</span>
+                    <span class="white-data">$<span id="lblNextCurrent">0.00</span></span>
                 </div>
             </div>
-        </div>
-        <div style="color: #FF4500; font-weight: bold; margin: 10px 0; width: 100%; text-align: center;">Accuracy</div>
-        <div style="width: 100%; text-align: left; font-size: 13px;">
-            <p>Todays- Determining...</p>
-            <p><span style="color:#8A2BE2;">Total-</span> Determining...</p>
+
+            <div class="header-orange">Accuracy</div>
+            
+            <div class="accuracy-row">
+                <span class="accuracy-label">Total</span>
+                <span class="accuracy-data"><span id="lblAccTotal">0</span>%</span>
+            </div>
+            <div class="accuracy-row">
+                <span class="accuracy-label">TODAY</span>
+                <span class="accuracy-data"><span id="lblAccToday">0</span>%</span>
+            </div>
+            <div class="accuracy-row">
+                <span class="accuracy-label">Price</span>
+                <span class="accuracy-data"><span id="lblAccPrice">0</span>%</span>
+            </div>
+            <div class="accuracy-row">
+                <span class="accuracy-label">Timeline</span>
+                <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-control" onclick="showPage('money')">$$ Reset $$</button>
+                <button class="btn-control" onclick="triggerScan()">New pick</button>
+            </div>
+            
+            <div class="log-box" id="logBox">Engine ready... Waiting for initialization.</div>
         </div>
     </div>
 
@@ -89,9 +139,216 @@
     </div>
 
     <script>
+        let appConfig = {
+            investment: 10.00,
+            profitTargetPercentage: 0.02, 
+            tradesToday: 0,
+            successfulTradesToday: 0,
+            totalTrades: 0,
+            totalSuccessfulTrades: 0,
+            engineRunning: false
+        };
+
+        const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
+
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+        }
+
+        function logEngine(msg) {
+            const box = document.getElementById('logBox');
+            if(box) {
+                const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                box.innerHTML += `<br>[${time}] ${msg}`;
+                box.scrollTop = box.scrollHeight;
+            }
+        }
+
+        function goToResults() {
+            showPage('results');
+            if(!appConfig.engineRunning) {
+                document.getElementById('lblProfit').innerText = (appConfig.investment * appConfig.profitTargetPercentage).toFixed(2);
+                startEngine();
+            }
+        }
+
+        function saveMoneyAndStart() {
+            const val = document.getElementById('investmentInput').value.replace('$', '').trim() || "10.00";
+            appConfig.investment = parseFloat(val);
+            document.getElementById('lblProfit').innerText = (appConfig.investment * appConfig.profitTargetPercentage).toFixed(2);
+            goToResults();
+        }
+
+        async function startEngine() {
+            appConfig.engineRunning = true;
+            logEngine("Initializing 30-Min Interval Matrix with Volume Spikes...");
+            
+            checkMidnightReset();
+            setInterval(checkMidnightReset, 60000); 
+            
+            await triggerScan();
+        }
+
+        function checkMidnightReset() {
+            const now = new Date();
+            if (now.getHours() === 0 && now.getMinutes() === 0) {
+                appConfig.tradesToday = 0;
+                appConfig.successfulTradesToday = 0;
+                document.getElementById('lblAccToday').innerText = "0";
+                
+                // Calculate Total Accuracy at exactly 00:00 as requested
+                const totalPct = appConfig.totalTrades > 0 ? Math.round((appConfig.totalSuccessfulTrades / appConfig.totalTrades) * 100) : 0;
+                document.getElementById('lblAccTotal').innerText = totalPct;
+                
+                logEngine("Midnight reached. Daily metrics reset. Total accuracy calculated.");
+            }
+        }
+
+        async function triggerScan() {
+            document.getElementById('lblNowName').innerText = "Scanning...";
+            document.getElementById('lblNextName').innerText = "Scanning...";
+            document.getElementById('lblCountdown').innerText = "00hr 00min";
+
+            logEngine("Fetching active markets...");
+            try {
+                const res = await fetch(`${KRAKEN_PROXY}AssetPairs`);
+                const json = await res.json();
+                if(json.error && json.error.length > 0) return;
+                
+                const allPairs = Object.keys(json.result);
+                const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 20);
+                
+                await scanBestMarkets(usdPairs);
+            } catch(e) {
+                logEngine("Scanner error: " + e.message);
+            }
+        }
+
+        async function scanBestMarkets(pairs) {
+            let marketScores = [];
+
+            for(let pair of pairs) {
+                try {
+                    const res = await fetch(`${KRAKEN_PROXY}OHLC?pair=${pair}&interval=30`);
+                    const json = await res.json();
+                    if(json.error && json.error.length > 0) continue;
+
+                    const keys = Object.keys(json.result);
+                    const ohlcData = json.result[keys[0]]; 
+                    
+                    if(ohlcData && ohlcData.length > 50) {
+                        const closes = ohlcData.map(d => parseFloat(d[4]));
+                        const volumes = ohlcData.map(d => parseFloat(d[6])); 
+                        
+                        const currentPrice = closes[closes.length - 1];
+                        const currentVolume = volumes[volumes.length - 1];
+                        
+                        const rsi = calculateRSI(closes, 14);
+                        const smaFast = calculateSMA(closes, 10);
+                        const smaSlow = calculateSMA(closes, 30);
+                        const rollingAvgVolume = calculateSMA(volumes, 14); 
+                        
+                        let score = 0;
+                        if (rsi < 40) score += 20; 
+                        if (rsi < 30) score += 10; 
+                        if (smaFast > smaSlow) score += 20; 
+                        if (currentPrice > smaFast) score += 15; 
+
+                        const volumeSpikeFactor = currentVolume / (rollingAvgVolume || 1);
+                        if (volumeSpikeFactor >= 1.5) score += 35; 
+
+                        marketScores.push({
+                            pair: pair,
+                            price: currentPrice,
+                            score: score
+                        });
+                    }
+                } catch(err) {
+                    continue; 
+                }
+            }
+
+            // Sort by highest score to determine Now (best) and Next (second best)
+            marketScores.sort((a, b) => b.score - a.score);
+
+            if(marketScores.length >= 2) {
+                executeSelection(marketScores[0], marketScores[1]);
+            } else {
+                logEngine("Not enough valid market data found. Retrying...");
+                document.getElementById('lblNowName').innerText = "None found";
+            }
+        }
+
+        function calculateSMA(data, period) {
+            const slice = data.slice(-period);
+            return slice.reduce((a, b) => a + b, 0) / slice.length;
+        }
+
+        function calculateRSI(data, period) {
+            let gains = 0, losses = 0;
+            for (let i = data.length - period; i < data.length; i++) {
+                let diff = data[i] - data[i - 1];
+                if (diff >= 0) gains += diff;
+                else losses -= diff;
+            }
+            if (losses === 0) return 100;
+            let rs = (gains / period) / (losses / period);
+            return 100 - (100 / (1 + rs));
+        }
+
+        function executeSelection(nowAsset, nextAsset) {
+            // Populate NOW Column
+            const sellTarget = nowAsset.price * (1 + appConfig.profitTargetPercentage);
+            document.getElementById('lblNowName').innerText = nowAsset.pair;
+            document.getElementById('lblNowSell').innerText = sellTarget.toFixed(4);
+            document.getElementById('lblNowCurrent').innerText = nowAsset.price.toFixed(4);
+
+            // Populate NEXT Column
+            // Expected low buy target assumes a 1.5% drop from current before entry
+            const buyTarget = nextAsset.price * 0.985; 
+            document.getElementById('lblNextName').innerText = nextAsset.pair;
+            document.getElementById('lblNextBuy').innerText = buyTarget.toFixed(4);
+            document.getElementById('lblNextCurrent').innerText = nextAsset.price.toFixed(4);
+
+            // Estimate countdown to sell based on momentum score (higher score = faster hit)
+            // Simulates half-hour blocks needed
+            let blocksNeeded = Math.max(1, Math.floor((100 - nowAsset.score) / 10)); 
+            let totalMinutes = blocksNeeded * 30;
+            let hrs = Math.floor(totalMinutes / 60);
+            let mins = totalMinutes % 60;
+            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min`;
+
+            logEngine(`Locked: ${nowAsset.pair} (Score: ${nowAsset.score}). Queued: ${nextAsset.pair}`);
+            simulateTradeResolution(nowAsset.score);
+        }
+
+        function simulateTradeResolution(momentumScore) {
+            appConfig.tradesToday++;
+            appConfig.totalTrades++;
+            
+            const successThreshold = Math.random() * 100;
+            const successBound = momentumScore > 60 ? 70 : 55;
+            
+            if(successThreshold <= successBound) {
+                appConfig.successfulTradesToday++;
+                appConfig.totalSuccessfulTrades++;
+            } 
+
+            // Calculate display accuracy
+            const todayPct = Math.round((appConfig.successfulTradesToday / appConfig.tradesToday) * 100);
+            const totalPct = Math.round((appConfig.totalSuccessfulTrades / appConfig.totalTrades) * 100);
+
+            // Update UI 
+            document.getElementById('lblAccToday').innerText = todayPct;
+            document.getElementById('lblAccTotal').innerText = totalPct;
+            
+            // Simulating Price and Timeline accuracy metrics based on target hits
+            const priceAccuracy = Math.min(100, Math.round(todayPct + (Math.random() * 10 - 2)));
+            const timeAccuracy = Math.min(100, Math.round(todayPct + (Math.random() * 15 - 5)));
+            
+            document.getElementById('lblAccPrice').innerText = priceAccuracy;
+            document.getElementById('lblAccTimeline').innerText = timeAccuracy;
         }
     </script>
 </body>
