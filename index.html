@@ -9,19 +9,19 @@
         .active { display: flex; }
         .text-center { text-align: center; }
 
-        .header-pink { color: #FF1493; font-size: 28px; margin: 10px 0; text-align: center; font-weight: bold; width: 100%; }
+        .header-pink { color: #FF1493; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; }
         .header-orange { color: #FF4500; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; text-decoration: underline; text-decoration-color: #FF4500; }
         .header-currency { color: #8A2BE2; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; text-decoration: underline; text-decoration-color: #8A2BE2; }
         
-        .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; border-radius: 5px; }
-        .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 5px; cursor: pointer; border-radius: 5px; }
+        .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
+        .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
         .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 110px; cursor: pointer; margin-top: 15px; border-radius: 5px; }
         
         /* Fixed Footer Marquee */
         .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; background: black; padding: 10px 0; border-top: 1px solid #333; z-index: 100; }
         marquee { font-size: 14px; color: white; display: block; width: 100%; }
 
-        /* App Icon Styling */
+        /* App Icon Styling (Kept in CSS for future use) */
         .icon-container { width: 80px; height: 80px; border: 2px solid white; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 15px auto; background-color: #111; }
         .icon-text { color: #FF4500; font-size: 36px; font-weight: bold; font-family: 'Courier New', monospace; }
         
@@ -45,27 +45,27 @@
 </head>
 <body>
 
+    <!-- Home Page -->
     <div id="home" class="page active text-center">
-        <div class="icon-container">
-            <div class="icon-text">SC</div>
-        </div>
-        <h1 class="header-pink">Welcome!</h1>
-        <h2 style="color: #FF4500;">Let's Slaughter Crypto</h2>
-        <div>
+        <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
+        <h2 style="color: #FF4500; margin-bottom: 30px;">Let's Slaughter Crypto</h2>
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
             <button class="btn-ready" onclick="goToResults()">I'm ready!</button>
             <button class="btn-not" onclick="showPage('money')">Not yet</button>
         </div>
-        <p style="font-size: 14px; margin: 15px 0; color: #ccc;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
+        <p style="font-size: 14px; margin: 15px 0; color: white; text-align: left; padding: 0 10px;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
     </div>
 
+    <!-- Money Page -->
     <div id="money" class="page text-center">
-        <h1 style="color: #00FF00; margin-top: 20px;">Money Page</h1>
-        <p style="color: #ccc; margin-bottom: 10px;">How much to invest?</p>
+        <h1 style="color: #00FF00; margin-top: 40px;">Money Page</h1>
+        <p style="color: white; margin-bottom: 10px;">How much to invest?</p>
         <input type="text" id="investmentInput" class="money-input" placeholder="$ 10.">
         <button class="btn-ready" onclick="saveMoneyAndStart()">$ Enter</button>
         <button class="btn-not" onclick="showPage('home')" style="margin-top: 20px;">Back</button>
     </div>
 
+    <!-- Results Page -->
     <div id="results" class="page">
         <div class="results-container">
             
@@ -79,6 +79,7 @@
             <div class="header-currency">Currency</div>
             
             <div class="flex-row">
+                <!-- NOW Column -->
                 <div class="flex-col">
                     <span class="random-color">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
@@ -90,6 +91,7 @@
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
+                <!-- NEXT Column -->
                 <div class="flex-col">
                     <span class="random-color">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
@@ -121,6 +123,7 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
+            <!-- Controls & Logs -->
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn-control" onclick="triggerScan()">New pick</button>
             </div>
@@ -129,6 +132,7 @@
         </div>
     </div>
 
+    <!-- Persistent Footer -->
     <div class="footer-fixed">
         <marquee direction="left" scrollamount="5">
             <span style="color:#FF4500;">Slaughters</span> inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
