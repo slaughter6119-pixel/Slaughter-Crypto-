@@ -33,13 +33,11 @@
         .flex-col { display: flex; flex-direction: column; width: 48%; }
         
         /* Typography */
-        .neon-label { color: #00BFFF; font-size: 14px; }
-        .neon-label-pink { color: #FF69B4; font-size: 14px; }
-        .neon-label-green { color: #00FF00; font-size: 14px; }
+        .random-color { font-size: 14px; transition: color 0.3s ease; }
         .white-data { color: #FFFFFF; font-size: 14px; font-weight: bold; }
         
         .accuracy-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 8px; font-size: 16px; }
-        .accuracy-label { color: #00BFFF; text-align: left; }
+        .accuracy-label { text-align: left; }
         .accuracy-data { color: #FFFFFF; font-weight: bold; text-align: right; }
 
         .log-box { width: 100%; max-height: 80px; background: #111; border: 1px solid #333; font-size: 11px; color: #00FF00; overflow-y: auto; text-align: left; padding: 5px; margin-top: 20px; font-family: monospace; }
@@ -74,32 +72,32 @@
             <div class="header-pink" style="text-decoration: underline; text-decoration-color: #FF1493;">Results</div>
             
             <div class="flex-row" style="margin-bottom: 20px;">
-                <span><span class="neon-label-pink">Countdown to sell-</span> <span class="white-data" id="lblCountdown">--hr --min</span></span>
-                <span><span class="neon-label-green">Profit expected-</span> <span class="white-data">$<span id="lblProfit">0.00</span></span></span>
+                <span><span class="random-color">Countdown to sell-</span> <span class="white-data" id="lblCountdown">--hr --min</span></span>
+                <span><span class="random-color">Profit expected-</span> <span class="white-data">$<span id="lblProfit">0.00</span></span></span>
             </div>
 
             <div class="header-currency">Currency</div>
             
             <div class="flex-row">
                 <div class="flex-col">
-                    <span class="neon-label">Now-</span>
+                    <span class="random-color">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
                     
-                    <span class="neon-label" style="margin-top: 10px;">Sell price-</span>
+                    <span class="random-color" style="margin-top: 10px;">Sell price-</span>
                     <span class="white-data">$<span id="lblNowSell">0.00</span></span>
                     
-                    <span class="neon-label" style="margin-top: 10px;">Current-</span>
+                    <span class="random-color" style="margin-top: 10px;">Current-</span>
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
                 <div class="flex-col">
-                    <span class="neon-label">Next-</span>
+                    <span class="random-color">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
                     
-                    <span class="neon-label" style="margin-top: 10px;">Buy price-</span>
+                    <span class="random-color" style="margin-top: 10px;">Buy price-</span>
                     <span class="white-data">$<span id="lblNextBuy">0.00</span></span>
                     
-                    <span class="neon-label" style="margin-top: 10px;">Current-</span>
+                    <span class="random-color" style="margin-top: 10px;">Current-</span>
                     <span class="white-data">$<span id="lblNextCurrent">0.00</span></span>
                 </div>
             </div>
@@ -107,24 +105,23 @@
             <div class="header-orange">Accuracy</div>
             
             <div class="accuracy-row">
-                <span class="accuracy-label">Total</span>
+                <span class="random-color accuracy-label">Total</span>
                 <span class="accuracy-data"><span id="lblAccTotal">0</span>%</span>
             </div>
             <div class="accuracy-row">
-                <span class="accuracy-label">TODAY</span>
+                <span class="random-color accuracy-label">TODAY</span>
                 <span class="accuracy-data"><span id="lblAccToday">0</span>%</span>
             </div>
             <div class="accuracy-row">
-                <span class="accuracy-label">Price</span>
+                <span class="random-color accuracy-label">Price</span>
                 <span class="accuracy-data"><span id="lblAccPrice">0</span>%</span>
             </div>
             <div class="accuracy-row">
-                <span class="accuracy-label">Timeline</span>
+                <span class="random-color accuracy-label">Timeline</span>
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
             <div style="text-align: center; margin-top: 20px;">
-                <button class="btn-control" onclick="showPage('money')">$$ Reset $$</button>
                 <button class="btn-control" onclick="triggerScan()">New pick</button>
             </div>
             
@@ -151,6 +148,20 @@
 
         const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
 
+        // Palette of neon/bright colors to randomly assign to labels
+        const colorPalette = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
+
+        function randomizeColors() {
+            const elements = document.querySelectorAll('.random-color');
+            elements.forEach(el => {
+                const randomColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+                el.style.color = randomColor;
+            });
+        }
+
+        // Initialize random colors on load
+        window.onload = randomizeColors;
+
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -167,6 +178,7 @@
 
         function goToResults() {
             showPage('results');
+            randomizeColors(); // re-randomize colors when visiting results
             if(!appConfig.engineRunning) {
                 document.getElementById('lblProfit').innerText = (appConfig.investment * appConfig.profitTargetPercentage).toFixed(2);
                 startEngine();
