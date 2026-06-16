@@ -50,7 +50,6 @@
 </head>
 <body>
 
-    <!-- Home Page (Failsafe Active) -->
     <div id="home" class="page text-center active">
         <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
         <h2 style="color: #FF4500; margin-bottom: 30px;">Let's Slaughter Crypto</h2>
@@ -61,7 +60,6 @@
         <p style="font-size: 14px; margin: 15px 0; color: white; text-align: left; padding: 0 10px;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
     </div>
 
-    <!-- Money Page -->
     <div id="money" class="page text-center">
         <h1 style="color: #00FF00; margin-top: 40px;">Money Page</h1>
         <p style="color: white; margin-bottom: 10px;">How much to invest?</p>
@@ -70,7 +68,6 @@
         <button class="btn-not" onclick="showPage('home')" style="margin-top: 20px;">Back</button>
     </div>
 
-    <!-- Results Page -->
     <div id="results" class="page">
         <div class="results-container">
             
@@ -84,7 +81,6 @@
             <div class="header-currency" style="font-weight: normal;"><u>Currency</u></div>
             
             <div class="flex-row">
-                <!-- NOW Column -->
                 <div class="flex-col">
                     <span class="random-color">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
@@ -96,7 +92,6 @@
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
-                <!-- NEXT Column -->
                 <div class="flex-col">
                     <span class="random-color">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
@@ -128,7 +123,6 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
-            <!-- Controls & Logs -->
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn-control" onclick="pauseAndGoToHome()">Adjust profit / New pick</button>
             </div>
@@ -137,7 +131,6 @@
         </div>
     </div>
 
-    <!-- Persistent Footer -->
     <div class="footer-fixed">
         <marquee direction="left" scrollamount="5">
             <span style="color:#FF4500;">Slaughters</span> inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
@@ -267,12 +260,29 @@
         // --- Core Navigation and Reset Flow ---
 
         function saveMoneyAndStart() {
-            const val = document.getElementById('investmentInput').value.replace('$', '').trim();
-            state.investment = parseFloat(val) || 10.00;
+            const valInput = document.getElementById('investmentInput').value.replace('$', '').trim();
+            
+            // If blank, force default $10.00
+            if (valInput === "") {
+                state.investment = 10.00;
+                log(`No input detected. Defaulting investment to $10.00.`);
+            } else {
+                let parsed = parseFloat(valInput);
+                if (!isNaN(parsed)) {
+                    state.investment = parsed;
+                    log(`Investment amount updated to $${state.investment.toFixed(2)}.`);
+                } else {
+                    state.investment = 10.00; // Fallback if they type letters
+                    log(`Invalid input. Defaulting investment to $10.00.`);
+                }
+            }
+            
             saveState();
 
+            // Always clear the box for next time
+            document.getElementById('investmentInput').value = '';
+
             if(state.engineRunning) {
-                log(`Investment amount updated to $${state.investment.toFixed(2)}. Continuing active chain.`);
                 showPage('results');
                 updateExpectedProfitDisplay(); 
             } else {
@@ -626,7 +636,10 @@
                         
                         document.getElementById('lblNowCurrent').innerText = formatPrice(nowCurrent);
                         
-                        if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
+                        if(nowCurrent > state.now.peakPrice) {
+                            state.now.peakPrice = nowCurrent;
+                            saveState(); // Crucial memory persist for high score
+                        }
 
                         let priceProgress = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
                         let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); 
