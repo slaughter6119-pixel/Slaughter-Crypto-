@@ -50,6 +50,7 @@
 </head>
 <body>
 
+    <!-- Home Page (Failsafe Active) -->
     <div id="home" class="page text-center active">
         <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
         <h2 style="color: #FF4500; margin-bottom: 30px;">Let's Slaughter Crypto</h2>
@@ -60,6 +61,7 @@
         <p style="font-size: 14px; margin: 15px 0; color: white; text-align: left; padding: 0 10px;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
     </div>
 
+    <!-- Money Page -->
     <div id="money" class="page text-center">
         <h1 style="color: #00FF00; margin-top: 40px;">Money Page</h1>
         <p style="color: white; margin-bottom: 10px;">How much to invest?</p>
@@ -68,6 +70,7 @@
         <button class="btn-not" onclick="showPage('home')" style="margin-top: 20px;">Back</button>
     </div>
 
+    <!-- Results Page -->
     <div id="results" class="page">
         <div class="results-container">
             
@@ -81,6 +84,7 @@
             <div class="header-currency" style="font-weight: normal;"><u>Currency</u></div>
             
             <div class="flex-row">
+                <!-- NOW Column -->
                 <div class="flex-col">
                     <span class="random-color">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
@@ -92,6 +96,7 @@
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
+                <!-- NEXT Column -->
                 <div class="flex-col">
                     <span class="random-color">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
@@ -123,6 +128,7 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
+            <!-- Controls & Logs -->
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn-control" onclick="pauseAndGoToHome()">Adjust profit / New pick</button>
             </div>
@@ -131,6 +137,7 @@
         </div>
     </div>
 
+    <!-- Persistent Footer -->
     <div class="footer-fixed">
         <marquee direction="left" scrollamount="5">
             <span style="color:#FF4500;">Slaughters</span> inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
@@ -166,7 +173,6 @@
             if (savedStr) {
                 let savedState = JSON.parse(savedStr);
                 state = { ...state, ...savedState };
-                // Ensure nested objects aren't corrupted
                 if (savedState.now) state.now = { ...defaultState.now, ...savedState.now };
                 if (savedState.next) state.next = { ...defaultState.next, ...savedState.next };
             }
@@ -175,7 +181,6 @@
             state = JSON.parse(JSON.stringify(defaultState));
         }
 
-        // Final safeguards guaranteeing no null mathematics
         if(state.lastDate === undefined) state.lastDate = new Date().getDate();
         if(state.now.currentPrice === undefined) state.now.currentPrice = 0;
         if(state.now.expectedGain === undefined) state.now.expectedGain = 0.02;
@@ -184,6 +189,17 @@
         let timerInterval = null;
         let livePriceInterval = null;
         let midnightCheckInterval = null;
+
+        // Dynamic price formatter to prevent scientific notation and show exact Kraken data
+        function formatPrice(num) {
+            if (!num) return "0.00";
+            let str = Number(num).toFixed(10);
+            if (str.includes('.')) {
+                str = str.replace(/0+$/, ''); // Strip trailing zeros
+                str = str.replace(/\.$/, ''); // Strip trailing decimal if no zeros follow
+            }
+            return str;
+        }
 
         window.onload = () => {
             randomizeColors();
@@ -194,12 +210,20 @@
                 document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage || 0);
                 
                 restoreUI();
-                showPage('results'); // Overrides the failsafe active home page
+                showPage('results'); 
                 resumeEngine();
             } else {
                 showPage('home');
             }
         };
+
+        // Re-sync instantly when user returns to tab
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible" && state.engineRunning) {
+                log("Tab active: Forcing immediate live price sync...");
+                updateLivePricesAndAccuracy();
+            }
+        });
 
         function saveState() {
             try {
@@ -308,12 +332,12 @@
         function restoreUI() {
             if(state.now && state.now.pair) {
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
-                document.getElementById('lblNowSell').innerText = (state.now.sellTarget || 0).toFixed(4);
+                document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
                 updateExpectedProfitDisplay();
             }
             if(state.next && state.next.pair) {
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
-                document.getElementById('lblNextBuy').innerText = (state.next.buyPrice || 0).toFixed(4);
+                document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
             }
         }
 
@@ -330,6 +354,7 @@
                 await initialPopulateChain();
             }
             
+            updateLivePricesAndAccuracy(); 
             livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
@@ -338,6 +363,7 @@
             midnightCheckInterval = setInterval(checkDailyReset, 60000);
             
             startCountdownVisuals();
+            updateLivePricesAndAccuracy(); 
             livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
@@ -427,7 +453,7 @@
                 const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 30);
                 
                 let marketScores = [];
-                let seenBases = new Set(); // Prevent duplicate base currencies
+                let seenBases = new Set(); 
 
                 for(let pair of usdPairs) {
                     let baseName = cleanName(pair);
@@ -471,7 +497,7 @@
                             
                             if (rsi < 40) score += 20;
 
-                            seenBases.add(baseName); // Lock the base name so it can't be added again
+                            seenBases.add(baseName); 
                             marketScores.push({ pair, price: currentPrice, score, expectedGain: predictedGain });
                         }
                     } catch(err) { continue; }
@@ -496,7 +522,7 @@
                 state.now.currentPrice = scores[0].price;
 
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
-                document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
+                document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
                 updateExpectedProfitDisplay();
 
                 state.next.pair = scores[1].pair;
@@ -504,7 +530,7 @@
                 state.next.buyPrice = scores[1].price * 0.985; 
 
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
-                document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
+                document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
 
                 setTargetTime(scores[0].score);
                 updateLivePricesAndAccuracy();
@@ -559,14 +585,13 @@
             state.now.currentPrice = 0;
             
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
-            document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
+            document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
             updateExpectedProfitDisplay();
 
             document.getElementById('lblNextName').innerText = "Scanning...";
             document.getElementById('lblNextBuy').innerText = "0.00";
             
             const scores = await fetchMarketScores();
-            // Double check to absolutely guarantee Next is completely distinct from Now
             let newNext = scores.find(s => cleanName(s.pair) !== cleanName(state.now.pair)); 
             
             if(newNext) {
@@ -574,7 +599,7 @@
                 state.next.expectedGain = newNext.expectedGain;
                 state.next.buyPrice = newNext.price * 0.985; 
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
-                document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
+                document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                 
                 setTargetTime(newNext.score);
                 saveState();
@@ -599,7 +624,7 @@
                         let nowCurrent = parseFloat(json.result[nowKey].c[0]);
                         state.now.currentPrice = nowCurrent;
                         
-                        document.getElementById('lblNowCurrent').innerText = nowCurrent.toFixed(4);
+                        document.getElementById('lblNowCurrent').innerText = formatPrice(nowCurrent);
                         
                         if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
 
@@ -614,7 +639,7 @@
                     
                     if(nextKey) {
                         let nextCurrent = parseFloat(json.result[nextKey].c[0]);
-                        document.getElementById('lblNextCurrent').innerText = nextCurrent.toFixed(4);
+                        document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
                     }
                 }
             } catch(e) {}
