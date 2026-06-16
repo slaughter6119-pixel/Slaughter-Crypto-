@@ -209,7 +209,6 @@
             }
         };
 
-        // --- REPAIRED OFFLINE CATCH-UP LOGIC ---
         document.addEventListener("visibilitychange", async () => {
             if (document.visibilityState === "visible" && state.engineRunning) {
                 let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
@@ -236,7 +235,7 @@
                         const resNow = await fetch(`${KRAKEN_PROXY}OHLC?pair=${state.now.pair}&interval=1&since=${sinceUnix}`);
                         const jsonNow = await resNow.json();
 
-                        if (jsonNow.result && !jsonNow.error.length) {
+                        if (jsonNow.result && (!jsonNow.error || !jsonNow.error.length)) {
                             const keys = Object.keys(jsonNow.result).filter(k => k !== 'last');
                             let nowKey = keys[0];
 
@@ -264,7 +263,7 @@
                         const resNext = await fetch(`${KRAKEN_PROXY}OHLC?pair=${state.next.pair}&interval=1&since=${sinceUnix}`);
                         const jsonNext = await resNext.json();
 
-                        if (jsonNext.result && !jsonNext.error.length) {
+                        if (jsonNext.result && (!jsonNext.error || !jsonNext.error.length)) {
                             const keys = Object.keys(jsonNext.result).filter(k => k !== 'last');
                             let nextKey = keys[0];
 
@@ -532,17 +531,36 @@
 
         async function fetchMarketScores() {
             try {
-                const res = await fetch(`${KRAKEN_PROXY}AssetPairs`);
-                const json = await res.json();
-                if(json.error && json.error.length > 0) return [];
+                // 1. MASTER RADAR SWEEP: Get ALL pairs in one hit
+                const tickerRes = await fetch(`${KRAKEN_PROXY}Ticker`);
+                const tickerJson = await tickerRes.json();
+                if(tickerJson.error && tickerJson.error.length > 0) return [];
+
+                const allPairs = Object.keys(tickerJson.result);
                 
-                const allPairs = Object.keys(json.result);
-                const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 12);
-                
+                // 2. Filter for actual volume/activity (stripping out dead coins)
+                let activeCoins = [];
+                for (let pair of allPairs) {
+                    if (pair.endsWith("USD") || pair.endsWith("USDT")) {
+                        let data = tickerJson.result[pair];
+                        let trades24h = parseInt(data.t[1]); // Number of trades in 24 hours
+                        
+                        // Must have significant live activity to be considered
+                        if (trades24h > 1500) { 
+                            activeCoins.push({ pair: pair, trades: trades24h });
+                        }
+                    }
+                }
+
+                // 3. Sort by highest trading volume and isolate the Top 10 Alphas
+                activeCoins.sort((a, b) => b.trades - a.trades);
+                const topTargets = activeCoins.slice(0, 10).map(c => c.pair);
+
                 let marketScores = [];
                 let seenBases = new Set(); 
 
-                for(let pair of usdPairs) {
+                // 4. Run the deep math ONLY on the heavy hitters
+                for(let pair of topTargets) {
                     let baseName = cleanName(pair);
                     if(seenBases.has(baseName)) continue; 
 
@@ -598,7 +616,7 @@
         }
 
         async function initialPopulateChain() {
-            log("Processing MACD and Volatility data...");
+            log("Running Global Radar Sweep...");
             const scores = await fetchMarketScores();
             if(scores.length >= 2) {
                 state.now.pair = scores[0].pair;
