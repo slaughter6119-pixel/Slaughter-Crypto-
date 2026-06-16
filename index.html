@@ -204,6 +204,10 @@
             }
         }
 
+        function cleanName(pairName) {
+            return pairName.replace(/USDT$/, '').replace(/USD$/, '');
+        }
+
         function goToResults() {
             showPage('results');
             randomizeColors(); 
@@ -223,11 +227,11 @@
 
         function restoreUI() {
             if(state.now.pair) {
-                document.getElementById('lblNowName').innerText = state.now.pair;
+                document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
             }
             if(state.next.pair) {
-                document.getElementById('lblNextName').innerText = state.next.pair;
+                document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
                 document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
             }
         }
@@ -336,7 +340,7 @@
                 state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
                 state.now.peakPrice = scores[0].price;
 
-                document.getElementById('lblNowName').innerText = state.now.pair;
+                document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
 
                 // Setup NEXT
@@ -344,7 +348,7 @@
                 // Generate genuine lower buy price for Next
                 state.next.buyPrice = scores[1].price * 0.985; 
 
-                document.getElementById('lblNextName').innerText = state.next.pair;
+                document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
                 document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
 
                 setTargetTime(scores[0].score);
@@ -378,7 +382,7 @@
             state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
             state.now.peakPrice = 0; 
             
-            document.getElementById('lblNowName').innerText = state.now.pair;
+            document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
 
             document.getElementById('lblNextName').innerText = "Scanning...";
@@ -390,7 +394,7 @@
             if(newNext) {
                 state.next.pair = newNext.pair;
                 state.next.buyPrice = newNext.price * 0.985; // Generate lower target for new cycle
-                document.getElementById('lblNextName').innerText = state.next.pair;
+                document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
                 document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
                 
                 setTargetTime(newNext.score);
