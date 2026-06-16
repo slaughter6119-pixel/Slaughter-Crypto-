@@ -640,4 +640,76 @@
                     let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
                     let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','').replace('USD','')));
                     
-                    if(
+                    if(nowKey) {
+                        let nowCurrent = parseFloat(json.result[nowKey].c[0]);
+                        state.now.currentPrice = nowCurrent;
+                        
+                        document.getElementById('lblNowCurrent').innerText = formatPrice(nowCurrent);
+                        
+                        if(nowCurrent > state.now.peakPrice) {
+                            state.now.peakPrice = nowCurrent;
+                            saveState(); 
+                        }
+
+                        let priceProgress = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+                        let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); 
+                        document.getElementById('lblAccPrice').innerText = Math.round(displayPriceAcc);
+                        
+                        let timelineProgress = ((nowCurrent - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+                        let displayTimeAcc = Math.max(-100, Math.min(100, timelineProgress));
+                        document.getElementById('lblAccTimeline').innerText = Math.round(displayTimeAcc);
+                    }
+                    
+                    if(nextKey) {
+                        let nextCurrent = parseFloat(json.result[nextKey].c[0]);
+                        state.next.currentPrice = nextCurrent;
+                        
+                        if (state.next.lowestPrice === 0 || nextCurrent < state.next.lowestPrice) {
+                            state.next.lowestPrice = nextCurrent;
+                        }
+                        
+                        document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function setTargetTime(momentumScore) {
+            let blocksNeeded = Math.max(1, Math.floor((100 - momentumScore) / 10)); 
+            let totalSeconds = blocksNeeded * 15 * 60; 
+            
+            state.targetSellTime = Date.now() + (totalSeconds * 1000);
+            saveState();
+            
+            startCountdownVisuals();
+        }
+
+        function startCountdownVisuals() {
+            if(timerInterval) clearInterval(timerInterval);
+            
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                updateTimerDisplay();
+                if(Date.now() >= state.targetSellTime) {
+                    clearInterval(timerInterval);
+                    triggerChainShift();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            let diffMs = state.targetSellTime - Date.now();
+            if(diffMs <= 0) {
+                document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
+                return;
+            }
+            let diffSecs = Math.floor(diffMs / 1000);
+            let hrs = Math.floor(diffSecs / 3600);
+            let mins = Math.floor((diffSecs % 3600) / 60);
+            let secs = diffSecs % 60;
+            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min ${secs.toString().padStart(2, '0')}sec`;
+        }
+    </script>
+</body>
+</html>
