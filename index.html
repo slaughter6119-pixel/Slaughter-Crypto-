@@ -155,7 +155,7 @@
             strictness: 1.0, 
 
             now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02 },
-            next: { pair: "", buyPrice: 0, expectedGain: 0.02 }
+            next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0 }
         };
 
         // Bulletproof Memory Loader with Deep Merge and Try/Catch
@@ -177,6 +177,7 @@
         if(state.lastDate === undefined) state.lastDate = new Date().getDate();
         if(state.now.currentPrice === undefined) state.now.currentPrice = 0;
         if(state.now.expectedGain === undefined) state.now.expectedGain = 0.02;
+        if(state.next.lowestPrice === undefined) state.next.lowestPrice = 0;
         if(state.strictness === undefined) state.strictness = 1.0;
         
         let timerInterval = null;
@@ -262,7 +263,6 @@
         function saveMoneyAndStart() {
             const valInput = document.getElementById('investmentInput').value.replace('$', '').trim();
             
-            // If blank, force default $10.00
             if (valInput === "") {
                 state.investment = 10.00;
                 log(`No input detected. Defaulting investment to $10.00.`);
@@ -272,14 +272,12 @@
                     state.investment = parsed;
                     log(`Investment amount updated to $${state.investment.toFixed(2)}.`);
                 } else {
-                    state.investment = 10.00; // Fallback if they type letters
+                    state.investment = 10.00; 
                     log(`Invalid input. Defaulting investment to $10.00.`);
                 }
             }
             
             saveState();
-
-            // Always clear the box for next time
             document.getElementById('investmentInput').value = '';
 
             if(state.engineRunning) {
@@ -312,7 +310,7 @@
             state.todayAverage = 0;
             state.tradesToday = 0;
             state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02 };
-            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02 };
+            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0 };
             state.engineRunning = false; 
             
             document.getElementById('lblAccToday').innerText = "0";
@@ -538,6 +536,7 @@
                 state.next.pair = scores[1].pair;
                 state.next.expectedGain = scores[1].expectedGain;
                 state.next.buyPrice = scores[1].price * 0.985; 
+                state.next.lowestPrice = scores[1].price; // Initialize tracker
 
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
@@ -587,12 +586,19 @@
             document.getElementById('lblAccPrice').innerText = "0";
             document.getElementById('lblAccTimeline').innerText = "0";
 
+            // --- DYNAMIC BUY PRICE FIX ---
+            let shiftedBuyPrice = state.next.buyPrice;
+            // If the coin never dropped to or below the predicted buy price, reset it to current market value
+            if (state.next.lowestPrice > state.next.buyPrice && state.next.currentPrice > 0) {
+                shiftedBuyPrice = state.next.currentPrice;
+                log(`Next target buy price not reached. Adjusting Now buy price to live market value.`);
+            }
+
             state.now.pair = state.next.pair;
             state.now.expectedGain = state.next.expectedGain;
-            state.now.buyPrice = state.next.buyPrice; 
+            state.now.buyPrice = shiftedBuyPrice; 
             state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
-            state.now.peakPrice = 0; 
-            state.now.currentPrice = 0;
+            state.now.peakPrice = state.now.currentPrice || shiftedBuyPrice; // Avoid instant negative dip
             
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -608,6 +614,8 @@
                 state.next.pair = newNext.pair;
                 state.next.expectedGain = newNext.expectedGain;
                 state.next.buyPrice = newNext.price * 0.985; 
+                state.next.lowestPrice = newNext.price; // Reset tracker for new Next coin
+                
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                 
@@ -652,6 +660,13 @@
                     
                     if(nextKey) {
                         let nextCurrent = parseFloat(json.result[nextKey].c[0]);
+                        state.next.currentPrice = nextCurrent;
+                        
+                        // Track the lowest price reached while in the Next column
+                        if (state.next.lowestPrice === 0 || nextCurrent < state.next.lowestPrice) {
+                            state.next.lowestPrice = nextCurrent;
+                        }
+                        
                         document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
                     }
                 }
@@ -660,7 +675,7 @@
 
         function setTargetTime(momentumScore) {
             let blocksNeeded = Math.max(1, Math.floor((100 - momentumScore) / 10)); 
-            let totalSeconds = blocksNeeded * 15 * 60; 
+            let totalSeconds = blocks-Needed * 15 * 60; 
             
             state.targetSellTime = Date.now() + (totalSeconds * 1000);
             saveState();
