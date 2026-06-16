@@ -145,7 +145,7 @@
             investment: 0, 
             engineRunning: false,
             targetSellTime: 0, 
-            lastTick: Date.now(), // Tracks when the engine last successfully checked prices
+            lastTick: Date.now(), 
             
             lastDate: new Date().getDate(), 
             tradesToday: 0,
@@ -209,12 +209,11 @@
             }
         };
 
-        // --- THE "TIME MACHINE" OFFLINE CATCH-UP ---
+        // --- REPAIRED OFFLINE CATCH-UP LOGIC ---
         document.addEventListener("visibilitychange", async () => {
             if (document.visibilityState === "visible" && state.engineRunning) {
                 let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
                 
-                // If the app was asleep for more than 45 seconds, pull the historical OHLC data
                 if (secondsOffline > 45) {
                     log(`App was asleep for ${Math.floor(secondsOffline / 60)} minutes. Syncing historical data...`);
                     await syncOfflineHistory();
@@ -225,54 +224,70 @@
         });
 
         async function syncOfflineHistory() {
-            if (isSyncingHistory || !state.now.pair) return;
+            if (isSyncingHistory) return;
             isSyncingHistory = true;
 
             try {
-                // Buffer the time by 60 seconds to ensure we catch the exact minute we went to sleep
                 let sinceUnix = Math.floor(state.lastTick / 1000) - 60; 
-                const pairQuery = `${state.now.pair},${state.next.pair}`;
                 
-                // Pull the 1-minute historical candles from Kraken
-                const res = await fetch(`${KRAKEN_PROXY}OHLC?pair=${pairQuery}&interval=1&since=${sinceUnix}`);
-                const json = await res.json();
+                // 1. Fetch History for the "NOW" coin individually
+                if (state.now.pair) {
+                    try {
+                        const resNow = await fetch(`${KRAKEN_PROXY}OHLC?pair=${state.now.pair}&interval=1&since=${sinceUnix}`);
+                        const jsonNow = await resNow.json();
 
-                if (json.result) {
-                    const keys = Object.keys(json.result).filter(k => k !== 'last');
-                    
-                    let nowKey = keys.find(k => k.includes(cleanName(state.now.pair)));
-                    let nextKey = keys.find(k => k.includes(cleanName(state.next.pair)));
+                        if (jsonNow.result && !jsonNow.error.length) {
+                            const keys = Object.keys(jsonNow.result).filter(k => k !== 'last');
+                            let nowKey = keys[0];
 
-                    // Scan the missed history for the absolute highest peak
-                    if (nowKey && json.result[nowKey]) {
-                        let candles = json.result[nowKey];
-                        let highestFound = state.now.peakPrice;
-                        for (let c of candles) {
-                            let high = parseFloat(c[2]); // Index 2 is the High price
-                            if (high > highestFound) highestFound = high;
+                            if (nowKey && jsonNow.result[nowKey]) {
+                                let candles = jsonNow.result[nowKey];
+                                let highestFound = state.now.peakPrice;
+                                for (let c of candles) {
+                                    let high = parseFloat(c[2]); // High price
+                                    if (high > highestFound) highestFound = high;
+                                }
+                                if (highestFound > state.now.peakPrice) {
+                                    state.now.peakPrice = highestFound;
+                                    log(`Offline peak locked: ${formatPrice(highestFound)}`);
+                                }
+                            }
                         }
-                        if (highestFound > state.now.peakPrice) {
-                            state.now.peakPrice = highestFound;
-                            log(`Offline peak locked: ${formatPrice(highestFound)}`);
-                        }
+                    } catch (e) {
+                        log("Now history partial sync failed.");
                     }
-
-                    // Scan the missed history for the absolute lowest dip
-                    if (nextKey && json.result[nextKey]) {
-                        let candles = json.result[nextKey];
-                        let lowestFound = state.next.lowestPrice;
-                        for (let c of candles) {
-                            let low = parseFloat(c[3]); // Index 3 is the Low price
-                            if (lowestFound === 0 || low < lowestFound) lowestFound = low;
-                        }
-                        if (state.next.lowestPrice === 0 || lowestFound < state.next.lowestPrice) {
-                            state.next.lowestPrice = lowestFound;
-                        }
-                    }
-                    saveState();
                 }
+
+                // 2. Fetch History for the "NEXT" coin individually
+                if (state.next.pair) {
+                    try {
+                        const resNext = await fetch(`${KRAKEN_PROXY}OHLC?pair=${state.next.pair}&interval=1&since=${sinceUnix}`);
+                        const jsonNext = await resNext.json();
+
+                        if (jsonNext.result && !jsonNext.error.length) {
+                            const keys = Object.keys(jsonNext.result).filter(k => k !== 'last');
+                            let nextKey = keys[0];
+
+                            if (nextKey && jsonNext.result[nextKey]) {
+                                let candles = jsonNext.result[nextKey];
+                                let lowestFound = state.next.lowestPrice;
+                                for (let c of candles) {
+                                    let low = parseFloat(c[3]); // Low price
+                                    if (lowestFound === 0 || low < lowestFound) lowestFound = low;
+                                }
+                                if (state.next.lowestPrice === 0 || lowestFound < state.next.lowestPrice) {
+                                    state.next.lowestPrice = lowestFound;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        log("Next history partial sync failed.");
+                    }
+                }
+                
+                saveState();
             } catch(e) {
-                log("Historical sync failed. Continuing with live data.");
+                log("Historical sync experienced a connection error.");
             }
             
             isSyncingHistory = false;
@@ -429,7 +444,6 @@
         async function resumeEngine() {
             log("Session restored. Tracking active timeline...");
             
-            // Check if we need to time travel immediately on load
             let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
             if (secondsOffline > 45) {
                 await syncOfflineHistory();
@@ -618,13 +632,11 @@
         async function triggerChainShift() {
             log("Executing chain shift and analyzing trade accuracy...");
             
-            // If the shift was triggered immediately upon waking up, force a historical catch-up first
             let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
             if (secondsOffline > 45) {
                 log("Woke up past target time. Syncing history before calculating accuracy...");
                 await syncOfflineHistory();
             } else {
-                // Otherwise just do a normal quick live sync
                 try {
                     const pairQuery = `${state.now.pair},${state.next.pair}`;
                     const res = await fetch(`${KRAKEN_PROXY}Ticker?pair=${pairQuery}`);
@@ -778,7 +790,6 @@
                         document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
                     }
                     
-                    // Mark the exact time of the last successful live pull
                     state.lastTick = Date.now();
                     saveState();
                 }
@@ -802,7 +813,6 @@
 
             timerInterval = setInterval(() => {
                 updateTimerDisplay();
-                // Instead of instantly triggering the shift while asleep, it waits to catch up on wake
                 if(Date.now() >= state.targetSellTime && document.visibilityState === "visible") {
                     clearInterval(timerInterval);
                     triggerChainShift();
@@ -815,7 +825,6 @@
             if(diffMs <= 0) {
                 document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
                 
-                // If it hits zero while asleep, it holds the visual at 00:00:00 until you open it
                 if (document.visibilityState === "hidden") {
                     if (timerInterval) clearInterval(timerInterval);
                 }
