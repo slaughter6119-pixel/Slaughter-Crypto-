@@ -50,7 +50,6 @@
 </head>
 <body>
 
-    <!-- Home Page -->
     <div id="home" class="page text-center active">
         <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
         <h2 style="color: #FF4500; margin-bottom: 30px;">Let's Slaughter Crypto</h2>
@@ -61,7 +60,6 @@
         <p style="font-size: 14px; margin: 15px 0; color: white; text-align: left; padding: 0 10px;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
     </div>
 
-    <!-- Money Page -->
     <div id="money" class="page text-center">
         <h1 style="color: #00FF00; margin-top: 40px;">Money Page</h1>
         <p style="color: white; margin-bottom: 10px;">How much to invest?</p>
@@ -70,7 +68,6 @@
         <button class="btn-not" onclick="showPage('home')" style="margin-top: 20px;">Back</button>
     </div>
 
-    <!-- Results Page -->
     <div id="results" class="page">
         <div class="results-container">
             
@@ -84,7 +81,6 @@
             <div class="header-currency" style="font-weight: normal;"><u>Currency</u></div>
             
             <div class="flex-row">
-                <!-- NOW Column -->
                 <div class="flex-col">
                     <span class="random-color">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
@@ -96,7 +92,6 @@
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
-                <!-- NEXT Column -->
                 <div class="flex-col">
                     <span class="random-color">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
@@ -128,7 +123,6 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
-            <!-- Controls & Logs -->
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn-control" onclick="forceNewPick()">New pick</button>
             </div>
@@ -137,7 +131,6 @@
         </div>
     </div>
 
-    <!-- Persistent Footer -->
     <div class="footer-fixed">
         <marquee direction="left" scrollamount="5">
             <span style="color:#FF4500;">Slaughters</span> inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
@@ -150,8 +143,7 @@
 
         // Default State
         let defaultState = {
-            investment: 10.00,
-            profitTarget: 0.02, 
+            investment: 0, // Defaults to 0, switches to 10 when engine starts if still 0
             engineRunning: false,
             targetSellTime: 0, 
             
@@ -160,8 +152,8 @@
             daysRun: 0,
             totalAverage: 0, 
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0 },
-            next: { pair: "", buyPrice: 0 }
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, expectedGain: 0.02 },
+            next: { pair: "", buyPrice: 0, expectedGain: 0.02 }
         };
 
         let state = JSON.parse(localStorage.getItem('slaughterState')) || defaultState;
@@ -173,7 +165,6 @@
         window.onload = () => {
             randomizeColors();
             if (state.engineRunning) {
-                document.getElementById('lblProfit').innerText = (state.investment * state.profitTarget).toFixed(2);
                 document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
                 document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage);
                 
@@ -213,36 +204,42 @@
             return pairName.replace(/USDT$/, '').replace(/USD$/, '');
         }
 
+        function updateExpectedProfitDisplay() {
+            let activeInvestment = state.investment === 0 ? 10.00 : state.investment;
+            let profit = activeInvestment * state.now.expectedGain;
+            document.getElementById('lblProfit').innerText = profit.toFixed(2);
+        }
+
         function goToResults() {
             showPage('results');
             randomizeColors(); 
             if(!state.engineRunning) {
-                document.getElementById('lblProfit').innerText = (state.investment * state.profitTarget).toFixed(2);
                 startEngine();
             }
         }
 
         function saveMoneyAndStart() {
-            const val = document.getElementById('investmentInput').value.replace('$', '').trim() || "10.00";
-            state.investment = parseFloat(val);
-            document.getElementById('lblProfit').innerText = (state.investment * state.profitTarget).toFixed(2);
+            const val = document.getElementById('investmentInput').value.replace('$', '').trim();
+            state.investment = parseFloat(val) || 10.00;
             saveState();
             goToResults();
         }
 
         function forceNewPick() {
-            // Stop existing loops
             if(timerInterval) clearInterval(timerInterval);
             if(livePriceInterval) clearInterval(livePriceInterval);
             
-            // Wipe today's active session data and current chain
+            // Hard resets per instruction
+            state.investment = 0; 
+            document.getElementById('investmentInput').value = '';
+            document.getElementById('lblProfit').innerText = "0.00";
+            
             state.todayAverage = 0;
             state.tradesToday = 0;
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0 };
-            state.next = { pair: "", buyPrice: 0 };
-            state.engineRunning = false; // This triggers a fresh scan when "I'm ready!" is pressed
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, expectedGain: 0.02 };
+            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02 };
+            state.engineRunning = false; 
             
-            // Reset UI elements to default states
             document.getElementById('lblAccToday').innerText = "0";
             document.getElementById('lblAccPrice').innerText = "0";
             document.getElementById('lblAccTimeline').innerText = "0";
@@ -256,10 +253,9 @@
             document.getElementById('lblNextBuy').innerText = "0.00";
             document.getElementById('lblNextCurrent').innerText = "0.00";
             
-            log("Engine reset. Awaiting new startup...");
+            log("Engine reset. Investment zeroed. Awaiting new startup...");
             saveState();
             
-            // Return to Home screen for fresh routing
             showPage('home');
         }
 
@@ -267,6 +263,7 @@
             if(state.now.pair) {
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
+                updateExpectedProfitDisplay();
             }
             if(state.next.pair) {
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
@@ -276,13 +273,15 @@
 
         async function startEngine() {
             state.engineRunning = true;
+            // Ensure default $10 if bypassed with 0
+            if(state.investment === 0) state.investment = 10.00;
+            
             saveState();
-            log("Initializing Fast-Track Core Engine...");
+            log("Initializing High-Velocity Profit Engine...");
             
             midnightCheckInterval = setInterval(checkMidnightReset, 60000); 
             await initialPopulateChain();
             
-            // Poll live price every 2.5 seconds for accuracy mapping
             livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
@@ -306,11 +305,14 @@
                 
                 document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage);
                 
+                // Midnight Resets
                 state.tradesToday = 0;
                 state.todayAverage = 0;
+                state.investment = 0;
                 document.getElementById('lblAccToday').innerText = "0";
+                document.getElementById('lblProfit').innerText = "0.00";
                 
-                log("00:00 Reached. Metrics updated and daily cycle reset.");
+                log("00:00 Reached. Profit Expected and Daily metrics reset.");
                 saveState();
             }
         }
@@ -335,25 +337,33 @@
                         const ohlcData = j.result[keys[0]]; 
                         
                         if(ohlcData && ohlcData.length > 50) {
+                            // Extract highs, closes, and volumes
+                            const highs = ohlcData.map(d => parseFloat(d[2]));
                             const closes = ohlcData.map(d => parseFloat(d[4]));
                             const volumes = ohlcData.map(d => parseFloat(d[6])); 
                             
                             const currentPrice = closes[closes.length - 1];
                             const currentVolume = volumes[volumes.length - 1];
                             
+                            // Engine Logic: Find max peak recently to calculate real expected gain
+                            const recentHigh = Math.max(...highs.slice(-10));
+                            let predictedGain = (recentHigh - currentPrice) / currentPrice;
+                            
+                            // Enforce minimum 2% boundary but capture higher potentials (5%, 8% etc)
+                            predictedGain = Math.max(0.02, predictedGain);
+                            
                             const rsi = calcRSI(closes, 14);
                             const smaF = calcSMA(closes, 10);
                             const smaS = calcSMA(closes, 30);
                             const avgVol = calcSMA(volumes, 14); 
                             
-                            let score = 0;
+                            // Score prioritizes greatest profit in shortest time
+                            let score = (predictedGain * 1000); 
                             if (rsi < 40) score += 20; 
-                            if (rsi < 30) score += 10; 
                             if (smaF > smaS) score += 20; 
-                            if (currentPrice > smaF) score += 15; 
                             if ((currentVolume / (avgVol || 1)) >= 1.5) score += 35; 
 
-                            marketScores.push({ pair, price: currentPrice, score });
+                            marketScores.push({ pair, price: currentPrice, score, expectedGain: predictedGain });
                         }
                     } catch(err) { continue; }
                 }
@@ -366,20 +376,23 @@
         }
 
         async function initialPopulateChain() {
-            log("Running initial scan to build prediction chain...");
+            log("Scanning for highest profit yields...");
             const scores = await fetchMarketScores();
             if(scores.length >= 2) {
                 // Setup NOW
                 state.now.pair = scores[0].pair;
+                state.now.expectedGain = scores[0].expectedGain;
                 state.now.buyPrice = scores[0].price * 0.99; 
-                state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
+                state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
                 state.now.peakPrice = scores[0].price;
 
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
+                updateExpectedProfitDisplay();
 
                 // Setup NEXT
                 state.next.pair = scores[1].pair;
+                state.next.expectedGain = scores[1].expectedGain;
                 state.next.buyPrice = scores[1].price * 0.985; 
 
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
@@ -408,13 +421,16 @@
             state.tradesToday++;
             document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
 
+            // Shift Next to Now, retaining the expected gain dynamic
             state.now.pair = state.next.pair;
+            state.now.expectedGain = state.next.expectedGain;
             state.now.buyPrice = state.next.buyPrice; 
-            state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
+            state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
             state.now.peakPrice = 0; 
             
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
+            updateExpectedProfitDisplay();
 
             document.getElementById('lblNextName').innerText = "Scanning...";
             document.getElementById('lblNextBuy').innerText = "0.00";
@@ -424,6 +440,7 @@
             
             if(newNext) {
                 state.next.pair = newNext.pair;
+                state.next.expectedGain = newNext.expectedGain;
                 state.next.buyPrice = newNext.price * 0.985; 
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
                 document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
