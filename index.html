@@ -74,7 +74,7 @@
             <div class="header-pink" style="font-weight: normal;"><u>Results</u></div>
             
             <div class="flex-row" style="margin-bottom: 20px;">
-                <span><span class="random-color">Countdown to sell-</span> <span class="white-data" id="lblCountdown">00hr 00min</span></span>
+                <span><span class="random-color">Countdown to sell-</span> <span class="white-data" id="lblCountdown">00hr 00min 00sec</span></span>
                 <span><span class="random-color">Profit expected-</span> <span class="white-data">$<span id="lblProfit">0.00</span></span></span>
             </div>
 
@@ -143,20 +143,23 @@
 
         // Default State
         let defaultState = {
-            investment: 0, // Defaults to 0, switches to 10 when engine starts if still 0
+            investment: 0, 
             engineRunning: false,
             targetSellTime: 0, 
             
+            lastDate: new Date().getDate(), // Tracks actual day for Midnight reset
             tradesToday: 0,
             todayAverage: 0, 
             daysRun: 0,
             totalAverage: 0, 
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, expectedGain: 0.02 },
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02 },
             next: { pair: "", buyPrice: 0, expectedGain: 0.02 }
         };
 
         let state = JSON.parse(localStorage.getItem('slaughterState')) || defaultState;
+        if(state.lastDate === undefined) state.lastDate = new Date().getDate();
+        if(state.now.currentPrice === undefined) state.now.currentPrice = 0;
         
         let timerInterval = null;
         let livePriceInterval = null;
@@ -164,6 +167,8 @@
 
         window.onload = () => {
             randomizeColors();
+            checkDailyReset(); // Immediately checks if days passed while app was closed
+
             if (state.engineRunning) {
                 document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
                 document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage);
@@ -229,21 +234,20 @@
             if(timerInterval) clearInterval(timerInterval);
             if(livePriceInterval) clearInterval(livePriceInterval);
             
-            // Hard resets per instruction
             state.investment = 0; 
             document.getElementById('investmentInput').value = '';
             document.getElementById('lblProfit').innerText = "0.00";
             
             state.todayAverage = 0;
             state.tradesToday = 0;
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, expectedGain: 0.02 };
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02 };
             state.next = { pair: "", buyPrice: 0, expectedGain: 0.02 };
             state.engineRunning = false; 
             
             document.getElementById('lblAccToday').innerText = "0";
             document.getElementById('lblAccPrice').innerText = "0";
             document.getElementById('lblAccTimeline').innerText = "0";
-            document.getElementById('lblCountdown').innerText = "00hr 00min";
+            document.getElementById('lblCountdown').innerText = "00hr 00min 00sec";
             
             document.getElementById('lblNowName').innerText = "Determining...";
             document.getElementById('lblNowSell').innerText = "0.00";
@@ -273,13 +277,12 @@
 
         async function startEngine() {
             state.engineRunning = true;
-            // Ensure default $10 if bypassed with 0
             if(state.investment === 0) state.investment = 10.00;
             
             saveState();
             log("Initializing High-Velocity Profit Engine...");
             
-            midnightCheckInterval = setInterval(checkMidnightReset, 60000); 
+            midnightCheckInterval = setInterval(checkDailyReset, 60000); 
             await initialPopulateChain();
             
             livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
@@ -287,32 +290,37 @@
 
         function resumeEngine() {
             log("Session restored. Tracking active timeline...");
-            midnightCheckInterval = setInterval(checkMidnightReset, 60000);
+            midnightCheckInterval = setInterval(checkDailyReset, 60000);
             
             startCountdownVisuals();
             livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
-        function checkMidnightReset() {
-            const now = new Date();
-            if (now.getHours() === 0 && now.getMinutes() === 0) {
-                if(state.daysRun === 0) {
+        // Hard Calendar-Based Reset Logic
+        function checkDailyReset() {
+            let currentDate = new Date().getDate();
+            if (currentDate !== state.lastDate) {
+                // Average Total with previous day's TODAY
+                if (state.daysRun === 0) {
                     state.totalAverage = state.todayAverage;
                 } else {
-                    state.totalAverage = ((state.totalAverage * state.daysRun) + state.todayAverage) / (state.daysRun + 1);
+                    state.totalAverage = Math.round((state.totalAverage + state.todayAverage) / 2);
                 }
+                
                 state.daysRun++;
+                state.lastDate = currentDate;
                 
-                document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage);
-                
-                // Midnight Resets
+                // Reset daily metrics
                 state.tradesToday = 0;
                 state.todayAverage = 0;
                 state.investment = 0;
+                
+                // Update UI immediately
+                document.getElementById('lblAccTotal').innerText = state.totalAverage;
                 document.getElementById('lblAccToday').innerText = "0";
                 document.getElementById('lblProfit').innerText = "0.00";
                 
-                log("00:00 Reached. Profit Expected and Daily metrics reset.");
+                log("Date change detected. Averages calculated. Daily metrics reset.");
                 saveState();
             }
         }
@@ -337,7 +345,6 @@
                         const ohlcData = j.result[keys[0]]; 
                         
                         if(ohlcData && ohlcData.length > 50) {
-                            // Extract highs, closes, and volumes
                             const highs = ohlcData.map(d => parseFloat(d[2]));
                             const closes = ohlcData.map(d => parseFloat(d[4]));
                             const volumes = ohlcData.map(d => parseFloat(d[6])); 
@@ -345,11 +352,8 @@
                             const currentPrice = closes[closes.length - 1];
                             const currentVolume = volumes[volumes.length - 1];
                             
-                            // Engine Logic: Find max peak recently to calculate real expected gain
                             const recentHigh = Math.max(...highs.slice(-10));
                             let predictedGain = (recentHigh - currentPrice) / currentPrice;
-                            
-                            // Enforce minimum 2% boundary but capture higher potentials (5%, 8% etc)
                             predictedGain = Math.max(0.02, predictedGain);
                             
                             const rsi = calcRSI(closes, 14);
@@ -357,7 +361,6 @@
                             const smaS = calcSMA(closes, 30);
                             const avgVol = calcSMA(volumes, 14); 
                             
-                            // Score prioritizes greatest profit in shortest time
                             let score = (predictedGain * 1000); 
                             if (rsi < 40) score += 20; 
                             if (smaF > smaS) score += 20; 
@@ -379,18 +382,17 @@
             log("Scanning for highest profit yields...");
             const scores = await fetchMarketScores();
             if(scores.length >= 2) {
-                // Setup NOW
                 state.now.pair = scores[0].pair;
                 state.now.expectedGain = scores[0].expectedGain;
                 state.now.buyPrice = scores[0].price * 0.99; 
                 state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
                 state.now.peakPrice = scores[0].price;
+                state.now.currentPrice = scores[0].price;
 
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
                 updateExpectedProfitDisplay();
 
-                // Setup NEXT
                 state.next.pair = scores[1].pair;
                 state.next.expectedGain = scores[1].expectedGain;
                 state.next.buyPrice = scores[1].price * 0.985; 
@@ -405,28 +407,47 @@
         }
 
         async function triggerChainShift() {
-            log("Countdown 00:00 reached. Executing chain shift...");
+            log("Countdown 00:00:00 reached. Executing chain shift...");
             
-            let finalPriceAcc = parseFloat(document.getElementById('lblAccPrice').innerText) || 0;
+            let targetDiff = state.now.sellTarget - state.now.buyPrice;
             
-            let peakRange = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
-            let finalTimelineAcc = Math.max(-100, Math.min(100, peakRange)); 
-            if(state.now.peakPrice >= state.now.sellTarget) finalTimelineAcc = 100; 
+            // Finalize Price Accuracy (Highest peak achieved during countdown window)
+            let peakRange = ((state.now.peakPrice - state.now.buyPrice) / targetDiff) * 100;
+            let finalPriceAcc = Math.max(-100, Math.min(100, peakRange)); 
+            if(state.now.peakPrice >= state.now.sellTarget) finalPriceAcc = 100; 
 
-            document.getElementById('lblAccTimeline').innerText = Math.round(finalTimelineAcc);
+            // Finalize Timeline Accuracy (Exact price standing at 00:00:00)
+            let endCurrentPrice = state.now.currentPrice || state.now.peakPrice;
+            let endRange = ((endCurrentPrice - state.now.buyPrice) / targetDiff) * 100;
+            let finalTimelineAcc = Math.max(-100, Math.min(100, endRange));
+            if(endCurrentPrice >= state.now.sellTarget) finalTimelineAcc = 100;
 
+            finalPriceAcc = Math.round(finalPriceAcc);
+            finalTimelineAcc = Math.round(finalTimelineAcc);
+
+            // Calculate new block average and average it into TODAY
             let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
-
-            state.todayAverage = ((state.todayAverage * state.tradesToday) + blockAverage) / (state.tradesToday + 1);
+            
+            if (state.tradesToday === 0) {
+                state.todayAverage = blockAverage;
+            } else {
+                state.todayAverage = Math.round((state.todayAverage + blockAverage) / 2);
+            }
+            
             state.tradesToday++;
             document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
 
-            // Shift Next to Now, retaining the expected gain dynamic
+            // Visual Ghosting Fix: Instantly clear UI to 0% for the next coin
+            document.getElementById('lblAccPrice').innerText = "0";
+            document.getElementById('lblAccTimeline').innerText = "0";
+
+            // Shift Next to Now
             state.now.pair = state.next.pair;
             state.now.expectedGain = state.next.expectedGain;
             state.now.buyPrice = state.next.buyPrice; 
             state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
             state.now.peakPrice = 0; 
+            state.now.currentPrice = 0;
             
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
@@ -466,13 +487,21 @@
                     
                     if(nowKey) {
                         let nowCurrent = parseFloat(json.result[nowKey].c[0]);
+                        state.now.currentPrice = nowCurrent;
+                        
                         document.getElementById('lblNowCurrent').innerText = nowCurrent.toFixed(4);
                         
                         if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
 
-                        let priceProgress = ((nowCurrent - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+                        // Live tracking for Price Accuracy UI (Ghosting fixed, updates cleanly)
+                        let priceProgress = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
                         let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); 
                         document.getElementById('lblAccPrice').innerText = Math.round(displayPriceAcc);
+                        
+                        // Live tracking for Timeline Accuracy UI
+                        let timelineProgress = ((nowCurrent - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+                        let displayTimeAcc = Math.max(-100, Math.min(100, timelineProgress));
+                        document.getElementById('lblAccTimeline').innerText = Math.round(displayTimeAcc);
                     }
                     
                     if(nextKey) {
@@ -510,13 +539,14 @@
         function updateTimerDisplay() {
             let diffMs = state.targetSellTime - Date.now();
             if(diffMs <= 0) {
-                document.getElementById('lblCountdown').innerText = `00hr 00min`;
+                document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
                 return;
             }
             let diffSecs = Math.floor(diffMs / 1000);
             let hrs = Math.floor(diffSecs / 3600);
             let mins = Math.floor((diffSecs % 3600) / 60);
-            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min`;
+            let secs = diffSecs % 60;
+            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min ${secs.toString().padStart(2, '0')}sec`;
         }
 
         function calcSMA(data, period) {
