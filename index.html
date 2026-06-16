@@ -141,7 +141,6 @@
         const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
         const COLOR_PALETTE = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
 
-        // Default State mapped entirely to prevent undefined values
         let defaultState = {
             investment: 0, 
             engineRunning: false,
@@ -158,7 +157,7 @@
             next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0 }
         };
 
-        // Bulletproof Memory Loader with Deep Merge and Try/Catch
+        // Fully Locked Memory Deep-Merge
         let state = JSON.parse(JSON.stringify(defaultState)); 
         
         try {
@@ -166,31 +165,28 @@
             if (savedStr) {
                 let savedState = JSON.parse(savedStr);
                 state = { ...state, ...savedState };
-                if (savedState.now) state.now = { ...defaultState.now, ...savedState.now };
-                if (savedState.next) state.next = { ...defaultState.next, ...savedState.next };
+                state.now = { ...defaultState.now, ...(savedState.now || {}) };
+                state.next = { ...defaultState.next, ...(savedState.next || {}) };
             }
         } catch (e) {
             console.error("Memory parsing failure. Hard resetting state to protect engine.");
             state = JSON.parse(JSON.stringify(defaultState));
         }
 
+        // Final fail-safes ensuring nothing causes a top-level script crash
         if(state.lastDate === undefined) state.lastDate = new Date().getDate();
-        if(state.now.currentPrice === undefined) state.now.currentPrice = 0;
-        if(state.now.expectedGain === undefined) state.now.expectedGain = 0.02;
-        if(state.next.lowestPrice === undefined) state.next.lowestPrice = 0;
         if(state.strictness === undefined) state.strictness = 1.0;
         
         let timerInterval = null;
         let livePriceInterval = null;
         let midnightCheckInterval = null;
 
-        // Dynamic price formatter to prevent scientific notation and show exact Kraken data
         function formatPrice(num) {
             if (!num) return "0.00";
             let str = Number(num).toFixed(10);
             if (str.includes('.')) {
-                str = str.replace(/0+$/, ''); // Strip trailing zeros
-                str = str.replace(/\.$/, ''); // Strip trailing decimal if no zeros follow
+                str = str.replace(/0+$/, ''); 
+                str = str.replace(/\.$/, ''); 
             }
             return str;
         }
@@ -211,7 +207,6 @@
             }
         };
 
-        // Re-sync instantly when user returns to tab
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible" && state.engineRunning) {
                 log("Tab active: Forcing immediate live price sync...");
@@ -257,8 +252,6 @@
             let profit = activeInvestment * gain;
             document.getElementById('lblProfit').innerText = profit.toFixed(2);
         }
-
-        // --- Core Navigation and Reset Flow ---
 
         function saveMoneyAndStart() {
             const valInput = document.getElementById('investmentInput').value.replace('$', '').trim();
@@ -357,108 +350,3 @@
             
             saveState();
             log(`Initializing AI Math Engine. Current Strictness: ${state.strictness.toFixed(2)}x`);
-            
-            midnightCheckInterval = setInterval(checkDailyReset, 60000); 
-            
-            if(!state.now.pair) {
-                await initialPopulateChain();
-            }
-            
-            updateLivePricesAndAccuracy(); 
-            livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
-        }
-
-        function resumeEngine() {
-            log("Session restored. Tracking active timeline...");
-            midnightCheckInterval = setInterval(checkDailyReset, 60000);
-            
-            startCountdownVisuals();
-            updateLivePricesAndAccuracy(); 
-            livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
-        }
-
-        function checkDailyReset() {
-            let currentDate = new Date().getDate();
-            if (currentDate !== state.lastDate) {
-                if (state.daysRun === 0) {
-                    state.totalAverage = state.todayAverage;
-                } else {
-                    state.totalAverage = Math.round((state.totalAverage + state.todayAverage) / 2);
-                }
-                
-                state.daysRun++;
-                state.lastDate = currentDate;
-                
-                state.tradesToday = 0;
-                state.todayAverage = 0;
-                state.investment = 0;
-                
-                document.getElementById('lblAccTotal').innerText = state.totalAverage;
-                document.getElementById('lblAccToday').innerText = "0";
-                document.getElementById('lblProfit').innerText = "0.00";
-                
-                log("Date change detected. Averages calculated. Daily metrics reset.");
-                saveState();
-            }
-        }
-
-        // --- Advanced Mathematics Engine ---
-        function calcSMA(data, period) {
-            let slice = data.slice(-period);
-            return slice.reduce((a, b) => a + b, 0) / slice.length;
-        }
-        function calcEMA(data, period) {
-            let k = 2 / (period + 1);
-            let ema = [data[0]];
-            for(let i=1; i<data.length; i++) {
-                ema.push(data[i] * k + ema[i-1] * (1 - k));
-            }
-            return ema;
-        }
-        function calcMACD(closes) {
-            let ema12 = calcEMA(closes, 12);
-            let ema26 = calcEMA(closes, 26);
-            let macd = [];
-            for(let i=0; i<closes.length; i++) {
-                macd.push(ema12[i] - ema26[i]);
-            }
-            let signal = calcEMA(macd, 9);
-            return { macdLine: macd[macd.length-1], signalLine: signal[signal.length-1] };
-        }
-        function calcATR(highs, lows, closes, period=14) {
-            let tr = [highs[0] - lows[0]];
-            for(let i=1; i<closes.length; i++) {
-                let hl = highs[i] - lows[i];
-                let hc = Math.abs(highs[i] - closes[i-1]);
-                let lc = Math.abs(lows[i] - closes[i-1]);
-                tr.push(Math.max(hl, hc, lc));
-            }
-            return calcSMA(tr, period);
-        }
-        function calcBollinger(closes, period=20) {
-            let slice = closes.slice(-period);
-            let sma = slice.reduce((a,b)=>a+b,0)/period;
-            let variance = slice.reduce((a,b)=>a+Math.pow(b-sma, 2),0)/period;
-            let stddev = Math.sqrt(variance);
-            return { upper: sma + 2*stddev, lower: sma - 2*stddev, sma: sma };
-        }
-        function calcRSI(data, period) {
-            let gains = 0, losses = 0;
-            for (let i = data.length - period; i < data.length; i++) {
-                let diff = data[i] - data[i - 1];
-                if (diff >= 0) gains += diff; else losses -= diff;
-            }
-            if (losses === 0) return 100;
-            let rs = (gains / period) / (losses / period);
-            return 100 - (100 / (1 + rs));
-        }
-
-        async function fetchMarketScores() {
-            try {
-                const res = await fetch(`${KRAKEN_PROXY}AssetPairs`);
-                const json = await res.json();
-                if(json.error && json.error.length > 0) return [];
-                
-                const allPairs = Object.keys(json.result);
-                // Reduced slice to 12 to safely avoid Kraken's strict 15-call rate limits
-                const usdPairs = allPairs.filter(p => p.endsWith("USD
