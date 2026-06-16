@@ -1,17 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="theme-color" content="#000000">
     <title>Let's Slaughter Crypto</title>
+    
+    <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"Slaughter Crypto","short_name":"SC App","start_url":".","display":"standalone","background_color":"#000000","theme_color":"#000000","icons":[{"src":"data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22192%22 height=%22192%22><rect width=%22192%22 height=%22192%22 fill=%22%23111%22 rx=%2230%22/><text x=%2250%%22 y=%2255%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23FF4500%22 font-size=%2280%22 font-family=%22Courier New%22 font-weight=%22bold%22>SC</text><rect width=%22180%22 height=%22180%22 x=%226%22 y=%226%22 fill=%22none%22 stroke=%22white%22 stroke-width=%224%22 rx=%2225%22/></svg>","sizes":"192x192","type":"image/svg+xml"}]}'>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
     <style>
         body { background-color: black; color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 15px; overflow-y: auto; position: relative; padding-bottom: 50px; }
+        .page { display: none; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; padding: 15px; overflow-y: auto; position: relative; padding-bottom: 60px; }
         .active { display: flex; }
         .text-center { text-align: center; }
 
         .header-pink { color: #FF1493; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; }
-        .header-orange { color: #FF4500; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; text-decoration: underline; text-decoration-color: #FF4500; }
-        .header-currency { color: #8A2BE2; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; text-decoration: underline; text-decoration-color: #8A2BE2; }
+        .header-orange { color: #FF4500; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; }
+        .header-currency { color: #8A2BE2; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; }
         
         .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
@@ -20,10 +27,6 @@
         /* Fixed Footer Marquee */
         .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; background: black; padding: 10px 0; border-top: 1px solid #333; z-index: 100; }
         marquee { font-size: 14px; color: white; display: block; width: 100%; }
-
-        /* App Icon Styling (Kept in CSS for future use) */
-        .icon-container { width: 80px; height: 80px; border: 2px solid white; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 15px auto; background-color: #111; }
-        .icon-text { color: #FF4500; font-size: 36px; font-weight: bold; font-family: 'Courier New', monospace; }
         
         .money-input { width: 60px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; font-size: 16px; margin-bottom: 15px; }
 
@@ -45,7 +48,6 @@
 </head>
 <body>
 
-    <!-- Home Page -->
     <div id="home" class="page active text-center">
         <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
         <h2 style="color: #FF4500; margin-bottom: 30px;">Let's Slaughter Crypto</h2>
@@ -56,7 +58,6 @@
         <p style="font-size: 14px; margin: 15px 0; color: white; text-align: left; padding: 0 10px;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
     </div>
 
-    <!-- Money Page -->
     <div id="money" class="page text-center">
         <h1 style="color: #00FF00; margin-top: 40px;">Money Page</h1>
         <p style="color: white; margin-bottom: 10px;">How much to invest?</p>
@@ -65,21 +66,19 @@
         <button class="btn-not" onclick="showPage('home')" style="margin-top: 20px;">Back</button>
     </div>
 
-    <!-- Results Page -->
     <div id="results" class="page">
         <div class="results-container">
             
-            <div class="header-pink" style="text-decoration: underline; text-decoration-color: #FF1493;">Results</div>
+            <div class="header-pink" style="font-weight: normal;"><u>Results</u></div>
             
             <div class="flex-row" style="margin-bottom: 20px;">
-                <span><span class="random-color">Countdown to sell-</span> <span class="white-data" id="lblCountdown">--hr --min</span></span>
+                <span><span class="random-color">Countdown to sell-</span> <span class="white-data" id="lblCountdown">00hr 00min</span></span>
                 <span><span class="random-color">Profit expected-</span> <span class="white-data">$<span id="lblProfit">0.00</span></span></span>
             </div>
 
-            <div class="header-currency">Currency</div>
+            <div class="header-currency" style="font-weight: normal;"><u>Currency</u></div>
             
             <div class="flex-row">
-                <!-- NOW Column -->
                 <div class="flex-col">
                     <span class="random-color">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
@@ -91,7 +90,6 @@
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
-                <!-- NEXT Column -->
                 <div class="flex-col">
                     <span class="random-color">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
@@ -104,7 +102,7 @@
                 </div>
             </div>
 
-            <div class="header-orange">Accuracy</div>
+            <div class="header-orange" style="font-weight: normal;"><u>Accuracy</u></div>
             
             <div class="accuracy-row">
                 <span class="random-color accuracy-label">Total</span>
@@ -123,16 +121,14 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
-            <!-- Controls & Logs -->
             <div style="text-align: center; margin-top: 20px;">
-                <button class="btn-control" onclick="triggerScan()">New pick</button>
+                <button class="btn-control" onclick="forceChainShift()">New pick</button>
             </div>
             
             <div class="log-box" id="logBox">Engine ready... Waiting for initialization.</div>
         </div>
     </div>
 
-    <!-- Persistent Footer -->
     <div class="footer-fixed">
         <marquee direction="left" scrollamount="5">
             <span style="color:#FF4500;">Slaughters</span> inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
@@ -140,38 +136,43 @@
     </div>
 
     <script>
-        let appConfig = {
+        const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
+        const COLOR_PALETTE = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
+
+        let state = {
             investment: 10.00,
-            profitTargetPercentage: 0.02, 
+            profitTarget: 0.02, 
+            engineRunning: false,
+            countdownSeconds: 0,
+            timerInterval: null,
+            livePriceInterval: null,
+            midnightCheckInterval: null,
+            
+            // Accuracy Trackers
             tradesToday: 0,
-            successfulTradesToday: 0,
-            totalTrades: 0,
-            totalSuccessfulTrades: 0,
-            engineRunning: false
+            todayAverage: 0, // Running average for TODAY
+            daysRun: 0,
+            totalAverage: 0, // Running average for Total
+
+            // Chain State
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0 },
+            next: { pair: "", buyPrice: 0 }
         };
 
-        const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
-
-        // Palette of neon/bright colors to randomly assign to labels
-        const colorPalette = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
+        window.onload = randomizeColors;
 
         function randomizeColors() {
-            const elements = document.querySelectorAll('.random-color');
-            elements.forEach(el => {
-                const randomColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-                el.style.color = randomColor;
+            document.querySelectorAll('.random-color').forEach(el => {
+                el.style.color = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
             });
         }
-
-        // Initialize random colors on load
-        window.onload = randomizeColors;
 
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
 
-        function logEngine(msg) {
+        function log(msg) {
             const box = document.getElementById('logBox');
             if(box) {
                 const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
@@ -182,189 +183,266 @@
 
         function goToResults() {
             showPage('results');
-            randomizeColors(); // re-randomize colors when visiting results
-            if(!appConfig.engineRunning) {
-                document.getElementById('lblProfit').innerText = (appConfig.investment * appConfig.profitTargetPercentage).toFixed(2);
+            randomizeColors(); 
+            if(!state.engineRunning) {
+                document.getElementById('lblProfit').innerText = (state.investment * state.profitTarget).toFixed(2);
                 startEngine();
             }
         }
 
         function saveMoneyAndStart() {
             const val = document.getElementById('investmentInput').value.replace('$', '').trim() || "10.00";
-            appConfig.investment = parseFloat(val);
-            document.getElementById('lblProfit').innerText = (appConfig.investment * appConfig.profitTargetPercentage).toFixed(2);
+            state.investment = parseFloat(val);
+            document.getElementById('lblProfit').innerText = (state.investment * state.profitTarget).toFixed(2);
             goToResults();
         }
 
         async function startEngine() {
-            appConfig.engineRunning = true;
-            logEngine("Initializing 30-Min Interval Matrix with Volume Spikes...");
+            state.engineRunning = true;
+            log("Initializing Core Prediction Engine...");
             
-            checkMidnightReset();
-            setInterval(checkMidnightReset, 60000); 
+            state.midnightCheckInterval = setInterval(checkMidnightReset, 60000); 
             
-            await triggerScan();
+            // First run: Need to populate both Now and Next
+            await initialPopulateChain();
+            
+            // Start the rapid live price tracking (updates every 10 seconds)
+            state.livePriceInterval = setInterval(updateLivePricesAndAccuracy, 10000);
         }
 
         function checkMidnightReset() {
             const now = new Date();
             if (now.getHours() === 0 && now.getMinutes() === 0) {
-                appConfig.tradesToday = 0;
-                appConfig.successfulTradesToday = 0;
+                // Midnight Calculation: Average 23:59 TODAY with previous Total
+                if(state.daysRun === 0) {
+                    state.totalAverage = state.todayAverage;
+                } else {
+                    state.totalAverage = ((state.totalAverage * state.daysRun) + state.todayAverage) / (state.daysRun + 1);
+                }
+                state.daysRun++;
+                
+                document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage);
+                
+                // Reset TODAY variables
+                state.tradesToday = 0;
+                state.todayAverage = 0;
                 document.getElementById('lblAccToday').innerText = "0";
                 
-                // Calculate Total Accuracy at exactly 00:00 as requested
-                const totalPct = appConfig.totalTrades > 0 ? Math.round((appConfig.totalSuccessfulTrades / appConfig.totalTrades) * 100) : 0;
-                document.getElementById('lblAccTotal').innerText = totalPct;
-                
-                logEngine("Midnight reached. Daily metrics reset. Total accuracy calculated.");
+                log("00:00 Reached. Total Accuracy updated. Daily metrics reset.");
             }
         }
 
-        async function triggerScan() {
-            document.getElementById('lblNowName').innerText = "Scanning...";
-            document.getElementById('lblNextName').innerText = "Scanning...";
-            document.getElementById('lblCountdown').innerText = "00hr 00min";
-
-            logEngine("Fetching active markets...");
+        async function fetchMarketScores() {
             try {
                 const res = await fetch(`${KRAKEN_PROXY}AssetPairs`);
                 const json = await res.json();
-                if(json.error && json.error.length > 0) return;
+                if(json.error && json.error.length > 0) return [];
                 
                 const allPairs = Object.keys(json.result);
                 const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 20);
                 
-                await scanBestMarkets(usdPairs);
-            } catch(e) {
-                logEngine("Scanner error: " + e.message);
-            }
-        }
+                let marketScores = [];
+                for(let pair of usdPairs) {
+                    try {
+                        const r = await fetch(`${KRAKEN_PROXY}OHLC?pair=${pair}&interval=30`);
+                        const j = await r.json();
+                        if(j.error && j.error.length > 0) continue;
 
-        async function scanBestMarkets(pairs) {
-            let marketScores = [];
-
-            for(let pair of pairs) {
-                try {
-                    const res = await fetch(`${KRAKEN_PROXY}OHLC?pair=${pair}&interval=30`);
-                    const json = await res.json();
-                    if(json.error && json.error.length > 0) continue;
-
-                    const keys = Object.keys(json.result);
-                    const ohlcData = json.result[keys[0]]; 
-                    
-                    if(ohlcData && ohlcData.length > 50) {
-                        const closes = ohlcData.map(d => parseFloat(d[4]));
-                        const volumes = ohlcData.map(d => parseFloat(d[6])); 
+                        const keys = Object.keys(j.result);
+                        const ohlcData = j.result[keys[0]]; 
                         
-                        const currentPrice = closes[closes.length - 1];
-                        const currentVolume = volumes[volumes.length - 1];
-                        
-                        const rsi = calculateRSI(closes, 14);
-                        const smaFast = calculateSMA(closes, 10);
-                        const smaSlow = calculateSMA(closes, 30);
-                        const rollingAvgVolume = calculateSMA(volumes, 14); 
-                        
-                        let score = 0;
-                        if (rsi < 40) score += 20; 
-                        if (rsi < 30) score += 10; 
-                        if (smaFast > smaSlow) score += 20; 
-                        if (currentPrice > smaFast) score += 15; 
+                        if(ohlcData && ohlcData.length > 50) {
+                            const closes = ohlcData.map(d => parseFloat(d[4]));
+                            const volumes = ohlcData.map(d => parseFloat(d[6])); 
+                            
+                            const currentPrice = closes[closes.length - 1];
+                            const currentVolume = volumes[volumes.length - 1];
+                            
+                            // Strategy calculations
+                            const rsi = calcRSI(closes, 14);
+                            const smaF = calcSMA(closes, 10);
+                            const smaS = calcSMA(closes, 30);
+                            const avgVol = calcSMA(volumes, 14); 
+                            
+                            let score = 0;
+                            if (rsi < 40) score += 20; 
+                            if (rsi < 30) score += 10; 
+                            if (smaF > smaS) score += 20; 
+                            if (currentPrice > smaF) score += 15; 
+                            if ((currentVolume / (avgVol || 1)) >= 1.5) score += 35; 
 
-                        const volumeSpikeFactor = currentVolume / (rollingAvgVolume || 1);
-                        if (volumeSpikeFactor >= 1.5) score += 35; 
-
-                        marketScores.push({
-                            pair: pair,
-                            price: currentPrice,
-                            score: score
-                        });
-                    }
-                } catch(err) {
-                    continue; 
+                            marketScores.push({ pair, price: currentPrice, score });
+                        }
+                    } catch(err) { continue; }
                 }
-            }
-
-            // Sort by highest score to determine Now (best) and Next (second best)
-            marketScores.sort((a, b) => b.score - a.score);
-
-            if(marketScores.length >= 2) {
-                executeSelection(marketScores[0], marketScores[1]);
-            } else {
-                logEngine("Not enough valid market data found. Retrying...");
-                document.getElementById('lblNowName').innerText = "None found";
+                marketScores.sort((a, b) => b.score - a.score);
+                return marketScores;
+            } catch(e) {
+                log("Scanner error: " + e.message);
+                return [];
             }
         }
 
-        function calculateSMA(data, period) {
+        async function initialPopulateChain() {
+            log("Running initial scan to build prediction chain...");
+            const scores = await fetchMarketScores();
+            if(scores.length >= 2) {
+                // Setup NOW
+                state.now.pair = scores[0].pair;
+                state.now.buyPrice = scores[0].price * 0.98; // Simulated previous buy price
+                state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
+                state.now.peakPrice = scores[0].price;
+
+                document.getElementById('lblNowName').innerText = state.now.pair;
+                document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
+
+                // Setup NEXT
+                state.next.pair = scores[1].pair;
+                state.next.buyPrice = scores[1].price * 0.985; // Expected low buy target
+
+                document.getElementById('lblNextName').innerText = state.next.pair;
+                document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
+
+                startCountdown(scores[0].score);
+                updateLivePricesAndAccuracy();
+            }
+        }
+
+        async function triggerChainShift() {
+            log("Countdown 00:00 reached. Executing chain shift...");
+            
+            // 1. Calculate Final Averages for the current block
+            let finalPriceAcc = parseFloat(document.getElementById('lblAccPrice').innerText);
+            
+            // Timeline Accuracy: Peak price achieved during the countdown window
+            let peakRange = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+            let finalTimelineAcc = Math.max(-100, Math.min(100, peakRange)); // Cap at 100%
+            if(state.now.peakPrice >= state.now.sellTarget) finalTimelineAcc = 100; 
+
+            document.getElementById('lblAccTimeline').innerText = Math.round(finalTimelineAcc);
+
+            // 2. Average them together for the block
+            let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
+
+            // 3. Update TODAY Average
+            state.todayAverage = ((state.todayAverage * state.tradesToday) + blockAverage) / (state.tradesToday + 1);
+            state.tradesToday++;
+            document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
+
+            // 4. Shift Next to Now
+            state.now.pair = state.next.pair;
+            state.now.buyPrice = state.next.buyPrice;
+            state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
+            state.now.peakPrice = 0; // Reset peak for new cycle
+            
+            document.getElementById('lblNowName').innerText = state.now.pair;
+            document.getElementById('lblNowSell').innerText = state.now.sellTarget.toFixed(4);
+
+            document.getElementById('lblNextName').innerText = "Scanning...";
+            document.getElementById('lblNextBuy').innerText = "0.00";
+            
+            // 5. Scan for new NEXT
+            const scores = await fetchMarketScores();
+            let newNext = scores.find(s => s.pair !== state.now.pair); // Ensure no duplicate
+            
+            if(newNext) {
+                state.next.pair = newNext.pair;
+                state.next.buyPrice = newNext.price * 0.985;
+                document.getElementById('lblNextName').innerText = state.next.pair;
+                document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
+                
+                // Restart timer
+                startCountdown(newNext.score);
+            }
+        }
+
+        function forceChainShift() {
+            // "New pick" button forces the timer to 0 immediately to cycle the chain
+            if(state.timerInterval) clearInterval(state.timerInterval);
+            state.countdownSeconds = 0;
+            document.getElementById('lblCountdown').innerText = "00hr 00min";
+            triggerChainShift();
+        }
+
+        async function updateLivePricesAndAccuracy() {
+            if(!state.now.pair) return;
+
+            try {
+                // Fetch ticker data for Now and Next
+                const pairQuery = `${state.now.pair},${state.next.pair}`;
+                const res = await fetch(`${KRAKEN_PROXY}Ticker?pair=${pairQuery}`);
+                const json = await res.json();
+                
+                if(json.result) {
+                    const keys = Object.keys(json.result);
+                    
+                    // Route the correct keys to Now and Next
+                    let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
+                    let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','').replace('USD','')));
+                    
+                    if(nowKey) {
+                        let nowCurrent = parseFloat(json.result[nowKey].c[0]);
+                        document.getElementById('lblNowCurrent').innerText = nowCurrent.toFixed(4);
+                        
+                        // Track high watermark for Timeline accuracy
+                        if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
+
+                        // Calculate Dynamic Price Accuracy: ((Current - Buy) / (Sell - Buy)) * 100
+                        let priceProgress = ((nowCurrent - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+                        let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); // Cap at 100%
+                        document.getElementById('lblAccPrice').innerText = Math.round(displayPriceAcc);
+                    }
+                    
+                    if(nextKey) {
+                        let nextCurrent = parseFloat(json.result[nextKey].c[0]);
+                        document.getElementById('lblNextCurrent').innerText = nextCurrent.toFixed(4);
+                    }
+                }
+            } catch(e) {
+                // Silent catch for rapid tracking
+            }
+        }
+
+        function startCountdown(momentumScore) {
+            if(state.timerInterval) clearInterval(state.timerInterval);
+            
+            // Simulates time blocks needed based on score
+            let blocksNeeded = Math.max(1, Math.floor((100 - momentumScore) / 10)); 
+            state.countdownSeconds = blocksNeeded * 30 * 60; // Convert to seconds
+
+            updateTimerDisplay();
+
+            state.timerInterval = setInterval(() => {
+                state.countdownSeconds--;
+                updateTimerDisplay();
+                
+                if(state.countdownSeconds <= 0) {
+                    clearInterval(state.timerInterval);
+                    triggerChainShift();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            let hrs = Math.floor(state.countdownSeconds / 3600);
+            let mins = Math.floor((state.countdownSeconds % 3600) / 60);
+            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min`;
+        }
+
+        // Math Utilities
+        function calcSMA(data, period) {
             const slice = data.slice(-period);
             return slice.reduce((a, b) => a + b, 0) / slice.length;
         }
-
-        function calculateRSI(data, period) {
+        function calcRSI(data, period) {
             let gains = 0, losses = 0;
             for (let i = data.length - period; i < data.length; i++) {
                 let diff = data[i] - data[i - 1];
-                if (diff >= 0) gains += diff;
-                else losses -= diff;
+                if (diff >= 0) gains += diff; else losses -= diff;
             }
             if (losses === 0) return 100;
             let rs = (gains / period) / (losses / period);
             return 100 - (100 / (1 + rs));
-        }
-
-        function executeSelection(nowAsset, nextAsset) {
-            // Populate NOW Column
-            const sellTarget = nowAsset.price * (1 + appConfig.profitTargetPercentage);
-            document.getElementById('lblNowName').innerText = nowAsset.pair;
-            document.getElementById('lblNowSell').innerText = sellTarget.toFixed(4);
-            document.getElementById('lblNowCurrent').innerText = nowAsset.price.toFixed(4);
-
-            // Populate NEXT Column
-            // Expected low buy target assumes a 1.5% drop from current before entry
-            const buyTarget = nextAsset.price * 0.985; 
-            document.getElementById('lblNextName').innerText = nextAsset.pair;
-            document.getElementById('lblNextBuy').innerText = buyTarget.toFixed(4);
-            document.getElementById('lblNextCurrent').innerText = nextAsset.price.toFixed(4);
-
-            // Estimate countdown to sell based on momentum score (higher score = faster hit)
-            // Simulates half-hour blocks needed
-            let blocksNeeded = Math.max(1, Math.floor((100 - nowAsset.score) / 10)); 
-            let totalMinutes = blocksNeeded * 30;
-            let hrs = Math.floor(totalMinutes / 60);
-            let mins = totalMinutes % 60;
-            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min`;
-
-            logEngine(`Locked: ${nowAsset.pair} (Score: ${nowAsset.score}). Queued: ${nextAsset.pair}`);
-            simulateTradeResolution(nowAsset.score);
-        }
-
-        function simulateTradeResolution(momentumScore) {
-            appConfig.tradesToday++;
-            appConfig.totalTrades++;
-            
-            const successThreshold = Math.random() * 100;
-            const successBound = momentumScore > 60 ? 70 : 55;
-            
-            if(successThreshold <= successBound) {
-                appConfig.successfulTradesToday++;
-                appConfig.totalSuccessfulTrades++;
-            } 
-
-            // Calculate display accuracy
-            const todayPct = Math.round((appConfig.successfulTradesToday / appConfig.tradesToday) * 100);
-            const totalPct = Math.round((appConfig.totalSuccessfulTrades / appConfig.totalTrades) * 100);
-
-            // Update UI 
-            document.getElementById('lblAccToday').innerText = todayPct;
-            document.getElementById('lblAccTotal').innerText = totalPct;
-            
-            // Simulating Price and Timeline accuracy metrics based on target hits
-            const priceAccuracy = Math.min(100, Math.round(todayPct + (Math.random() * 10 - 2)));
-            const timeAccuracy = Math.min(100, Math.round(todayPct + (Math.random() * 15 - 5)));
-            
-            document.getElementById('lblAccPrice').innerText = priceAccuracy;
-            document.getElementById('lblAccTimeline').innerText = timeAccuracy;
         }
     </script>
 </body>
