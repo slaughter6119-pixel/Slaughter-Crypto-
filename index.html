@@ -424,10 +424,15 @@
                 if(json.error && json.error.length > 0) return [];
                 
                 const allPairs = Object.keys(json.result);
-                const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 25);
+                const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 30);
                 
                 let marketScores = [];
+                let seenBases = new Set(); // Prevent duplicate base currencies
+
                 for(let pair of usdPairs) {
+                    let baseName = cleanName(pair);
+                    if(seenBases.has(baseName)) continue; 
+
                     try {
                         const r = await fetch(`${KRAKEN_PROXY}OHLC?pair=${pair}&interval=15`);
                         const j = await r.json();
@@ -466,6 +471,7 @@
                             
                             if (rsi < 40) score += 20;
 
+                            seenBases.add(baseName); // Lock the base name so it can't be added again
                             marketScores.push({ pair, price: currentPrice, score, expectedGain: predictedGain });
                         }
                     } catch(err) { continue; }
@@ -560,7 +566,8 @@
             document.getElementById('lblNextBuy').innerText = "0.00";
             
             const scores = await fetchMarketScores();
-            let newNext = scores.find(s => s.pair !== state.now.pair); 
+            // Double check to absolutely guarantee Next is completely distinct from Now
+            let newNext = scores.find(s => cleanName(s.pair) !== cleanName(state.now.pair)); 
             
             if(newNext) {
                 state.next.pair = newNext.pair;
