@@ -141,17 +141,18 @@
         const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
         const COLOR_PALETTE = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
 
-        // Default State
+        // Default State with Learning Parameter
         let defaultState = {
             investment: 0, 
             engineRunning: false,
             targetSellTime: 0, 
             
-            lastDate: new Date().getDate(), // Tracks actual day for Midnight reset
+            lastDate: new Date().getDate(), 
             tradesToday: 0,
             todayAverage: 0, 
             daysRun: 0,
             totalAverage: 0, 
+            strictness: 1.0, // Autonomous Engine Learning baseline
 
             now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02 },
             next: { pair: "", buyPrice: 0, expectedGain: 0.02 }
@@ -160,6 +161,7 @@
         let state = JSON.parse(localStorage.getItem('slaughterState')) || defaultState;
         if(state.lastDate === undefined) state.lastDate = new Date().getDate();
         if(state.now.currentPrice === undefined) state.now.currentPrice = 0;
+        if(state.strictness === undefined) state.strictness = 1.0;
         
         let timerInterval = null;
         let livePriceInterval = null;
@@ -167,7 +169,7 @@
 
         window.onload = () => {
             randomizeColors();
-            checkDailyReset(); // Immediately checks if days passed while app was closed
+            checkDailyReset(); 
 
             if (state.engineRunning) {
                 document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
@@ -259,7 +261,6 @@
             
             log("Engine reset. Investment zeroed. Awaiting new startup...");
             saveState();
-            
             showPage('home');
         }
 
@@ -280,7 +281,7 @@
             if(state.investment === 0) state.investment = 10.00;
             
             saveState();
-            log("Initializing High-Velocity Profit Engine...");
+            log(`Initializing AI Math Engine. Current Strictness: ${state.strictness.toFixed(2)}x`);
             
             midnightCheckInterval = setInterval(checkDailyReset, 60000); 
             await initialPopulateChain();
@@ -296,11 +297,9 @@
             livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
-        // Hard Calendar-Based Reset Logic
         function checkDailyReset() {
             let currentDate = new Date().getDate();
             if (currentDate !== state.lastDate) {
-                // Average Total with previous day's TODAY
                 if (state.daysRun === 0) {
                     state.totalAverage = state.todayAverage;
                 } else {
@@ -309,13 +308,10 @@
                 
                 state.daysRun++;
                 state.lastDate = currentDate;
-                
-                // Reset daily metrics
                 state.tradesToday = 0;
                 state.todayAverage = 0;
                 state.investment = 0;
                 
-                // Update UI immediately
                 document.getElementById('lblAccTotal').innerText = state.totalAverage;
                 document.getElementById('lblAccToday').innerText = "0";
                 document.getElementById('lblProfit').innerText = "0.00";
@@ -325,6 +321,57 @@
             }
         }
 
+        // --- Advanced Mathematics Engine ---
+        function calcSMA(data, period) {
+            let slice = data.slice(-period);
+            return slice.reduce((a, b) => a + b, 0) / slice.length;
+        }
+        function calcEMA(data, period) {
+            let k = 2 / (period + 1);
+            let ema = [data[0]];
+            for(let i=1; i<data.length; i++) {
+                ema.push(data[i] * k + ema[i-1] * (1 - k));
+            }
+            return ema;
+        }
+        function calcMACD(closes) {
+            let ema12 = calcEMA(closes, 12);
+            let ema26 = calcEMA(closes, 26);
+            let macd = [];
+            for(let i=0; i<closes.length; i++) {
+                macd.push(ema12[i] - ema26[i]);
+            }
+            let signal = calcEMA(macd, 9);
+            return { macdLine: macd[macd.length-1], signalLine: signal[signal.length-1] };
+        }
+        function calcATR(highs, lows, closes, period=14) {
+            let tr = [highs[0] - lows[0]];
+            for(let i=1; i<closes.length; i++) {
+                let hl = highs[i] - lows[i];
+                let hc = Math.abs(highs[i] - closes[i-1]);
+                let lc = Math.abs(lows[i] - closes[i-1]);
+                tr.push(Math.max(hl, hc, lc));
+            }
+            return calcSMA(tr, period);
+        }
+        function calcBollinger(closes, period=20) {
+            let slice = closes.slice(-period);
+            let sma = slice.reduce((a,b)=>a+b,0)/period;
+            let variance = slice.reduce((a,b)=>a+Math.pow(b-sma, 2),0)/period;
+            let stddev = Math.sqrt(variance);
+            return { upper: sma + 2*stddev, lower: sma - 2*stddev, sma: sma };
+        }
+        function calcRSI(data, period) {
+            let gains = 0, losses = 0;
+            for (let i = data.length - period; i < data.length; i++) {
+                let diff = data[i] - data[i - 1];
+                if (diff >= 0) gains += diff; else losses -= diff;
+            }
+            if (losses === 0) return 100;
+            let rs = (gains / period) / (losses / period);
+            return 100 - (100 / (1 + rs));
+        }
+
         async function fetchMarketScores() {
             try {
                 const res = await fetch(`${KRAKEN_PROXY}AssetPairs`);
@@ -332,7 +379,7 @@
                 if(json.error && json.error.length > 0) return [];
                 
                 const allPairs = Object.keys(json.result);
-                const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 20);
+                const usdPairs = allPairs.filter(p => p.endsWith("USD") || p.endsWith("USDT")).slice(0, 25);
                 
                 let marketScores = [];
                 for(let pair of usdPairs) {
@@ -346,25 +393,39 @@
                         
                         if(ohlcData && ohlcData.length > 50) {
                             const highs = ohlcData.map(d => parseFloat(d[2]));
+                            const lows = ohlcData.map(d => parseFloat(d[3]));
                             const closes = ohlcData.map(d => parseFloat(d[4]));
                             const volumes = ohlcData.map(d => parseFloat(d[6])); 
                             
                             const currentPrice = closes[closes.length - 1];
                             const currentVolume = volumes[volumes.length - 1];
                             
-                            const recentHigh = Math.max(...highs.slice(-10));
-                            let predictedGain = (recentHigh - currentPrice) / currentPrice;
-                            predictedGain = Math.max(0.02, predictedGain);
-                            
+                            // Mathematics Execution
+                            const macdData = calcMACD(closes);
+                            const atr = calcATR(highs, lows, closes);
+                            const bb = calcBollinger(closes);
                             const rsi = calcRSI(closes, 14);
-                            const smaF = calcSMA(closes, 10);
-                            const smaS = calcSMA(closes, 30);
                             const avgVol = calcSMA(volumes, 14); 
                             
-                            let score = (predictedGain * 1000); 
-                            if (rsi < 40) score += 20; 
-                            if (smaF > smaS) score += 20; 
-                            if ((currentVolume / (avgVol || 1)) >= 1.5) score += 35; 
+                            // Dynamic Target using ATR Volatility
+                            let predictedGain = (atr * 2) / currentPrice; 
+                            predictedGain = Math.max(0.02, predictedGain); 
+                            
+                            let score = 0;
+
+                            // Self-Correcting Volume Requirement
+                            let volumeTarget = 1.5 * state.strictness;
+                            if ((currentVolume / (avgVol || 1)) >= volumeTarget) score += 40; 
+                            
+                            // MACD Bullish Confirmation
+                            if (macdData.macdLine > macdData.signalLine) score += 30; 
+                            
+                            // Bollinger Bounds: Reward buying low near the lower band
+                            if (currentPrice <= bb.sma && currentPrice >= (bb.lower * 0.99)) score += 30;
+                            if (currentPrice > bb.upper) score -= 50; // Prevent buying at the peak
+                            
+                            // Base RSI
+                            if (rsi < 40) score += 20;
 
                             marketScores.push({ pair, price: currentPrice, score, expectedGain: predictedGain });
                         }
@@ -379,7 +440,7 @@
         }
 
         async function initialPopulateChain() {
-            log("Scanning for highest profit yields...");
+            log("Processing MACD and Volatility data...");
             const scores = await fetchMarketScores();
             if(scores.length >= 2) {
                 state.now.pair = scores[0].pair;
@@ -407,16 +468,14 @@
         }
 
         async function triggerChainShift() {
-            log("Countdown 00:00:00 reached. Executing chain shift...");
+            log("Executing chain shift and analyzing trade accuracy...");
             
             let targetDiff = state.now.sellTarget - state.now.buyPrice;
             
-            // Finalize Price Accuracy (Highest peak achieved during countdown window)
             let peakRange = ((state.now.peakPrice - state.now.buyPrice) / targetDiff) * 100;
             let finalPriceAcc = Math.max(-100, Math.min(100, peakRange)); 
             if(state.now.peakPrice >= state.now.sellTarget) finalPriceAcc = 100; 
 
-            // Finalize Timeline Accuracy (Exact price standing at 00:00:00)
             let endCurrentPrice = state.now.currentPrice || state.now.peakPrice;
             let endRange = ((endCurrentPrice - state.now.buyPrice) / targetDiff) * 100;
             let finalTimelineAcc = Math.max(-100, Math.min(100, endRange));
@@ -425,9 +484,17 @@
             finalPriceAcc = Math.round(finalPriceAcc);
             finalTimelineAcc = Math.round(finalTimelineAcc);
 
-            // Calculate new block average and average it into TODAY
             let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
             
+            // Autonomous Learning Execution
+            if (blockAverage < 90) {
+                state.strictness = Math.min(3.0, state.strictness + 0.15); // Turn up strictness
+                log(`Accuracy missed target. strictness raised to ${state.strictness.toFixed(2)}x`);
+            } else {
+                state.strictness = Math.max(1.0, state.strictness - 0.05); // Relax to find trades
+                log(`Target secured! strictness relaxed to ${state.strictness.toFixed(2)}x`);
+            }
+
             if (state.tradesToday === 0) {
                 state.todayAverage = blockAverage;
             } else {
@@ -437,11 +504,9 @@
             state.tradesToday++;
             document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
 
-            // Visual Ghosting Fix: Instantly clear UI to 0% for the next coin
             document.getElementById('lblAccPrice').innerText = "0";
             document.getElementById('lblAccTimeline').innerText = "0";
 
-            // Shift Next to Now
             state.now.pair = state.next.pair;
             state.now.expectedGain = state.next.expectedGain;
             state.now.buyPrice = state.next.buyPrice; 
@@ -493,12 +558,10 @@
                         
                         if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
 
-                        // Live tracking for Price Accuracy UI (Ghosting fixed, updates cleanly)
                         let priceProgress = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
                         let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); 
                         document.getElementById('lblAccPrice').innerText = Math.round(displayPriceAcc);
                         
-                        // Live tracking for Timeline Accuracy UI
                         let timelineProgress = ((nowCurrent - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
                         let displayTimeAcc = Math.max(-100, Math.min(100, timelineProgress));
                         document.getElementById('lblAccTimeline').innerText = Math.round(displayTimeAcc);
@@ -547,21 +610,6 @@
             let mins = Math.floor((diffSecs % 3600) / 60);
             let secs = diffSecs % 60;
             document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min ${secs.toString().padStart(2, '0')}sec`;
-        }
-
-        function calcSMA(data, period) {
-            const slice = data.slice(-period);
-            return slice.reduce((a, b) => a + b, 0) / slice.length;
-        }
-        function calcRSI(data, period) {
-            let gains = 0, losses = 0;
-            for (let i = data.length - period; i < data.length; i++) {
-                let diff = data[i] - data[i - 1];
-                if (diff >= 0) gains += diff; else losses -= diff;
-            }
-            if (losses === 0) return 100;
-            let rs = (gains / period) / (losses / period);
-            return 100 - (100 / (1 + rs));
         }
     </script>
 </body>
