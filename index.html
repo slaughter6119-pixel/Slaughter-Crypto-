@@ -50,7 +50,8 @@
 </head>
 <body>
 
-    <div id="home" class="page text-center">
+    <!-- Home Page -->
+    <div id="home" class="page text-center active">
         <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
         <h2 style="color: #FF4500; margin-bottom: 30px;">Let's Slaughter Crypto</h2>
         <div style="display: flex; justify-content: center; margin-bottom: 20px;">
@@ -60,6 +61,7 @@
         <p style="font-size: 14px; margin: 15px 0; color: white; text-align: left; padding: 0 10px;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
     </div>
 
+    <!-- Money Page -->
     <div id="money" class="page text-center">
         <h1 style="color: #00FF00; margin-top: 40px;">Money Page</h1>
         <p style="color: white; margin-bottom: 10px;">How much to invest?</p>
@@ -68,6 +70,7 @@
         <button class="btn-not" onclick="showPage('home')" style="margin-top: 20px;">Back</button>
     </div>
 
+    <!-- Results Page -->
     <div id="results" class="page">
         <div class="results-container">
             
@@ -81,6 +84,7 @@
             <div class="header-currency" style="font-weight: normal;"><u>Currency</u></div>
             
             <div class="flex-row">
+                <!-- NOW Column -->
                 <div class="flex-col">
                     <span class="random-color">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
@@ -92,6 +96,7 @@
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
+                <!-- NEXT Column -->
                 <div class="flex-col">
                     <span class="random-color">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
@@ -123,6 +128,7 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
+            <!-- Controls & Logs -->
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn-control" onclick="forceNewPick()">New pick</button>
             </div>
@@ -131,6 +137,7 @@
         </div>
     </div>
 
+    <!-- Persistent Footer -->
     <div class="footer-fixed">
         <marquee direction="left" scrollamount="5">
             <span style="color:#FF4500;">Slaughters</span> inspiration: <span style="color:#FF1493;">Merilee,</span> <span style="color:#008080;">Kyrah,</span> and <span style="color:#8A2BE2;">Zaylee!</span> ✨
@@ -146,7 +153,7 @@
             investment: 10.00,
             profitTarget: 0.02, 
             engineRunning: false,
-            targetSellTime: 0, // Timestamp to track persistence
+            targetSellTime: 0, 
             
             tradesToday: 0,
             todayAverage: 0, 
@@ -157,7 +164,6 @@
             next: { pair: "", buyPrice: 0 }
         };
 
-        // Load state from memory or use default
         let state = JSON.parse(localStorage.getItem('slaughterState')) || defaultState;
         
         let timerInterval = null;
@@ -167,7 +173,6 @@
         window.onload = () => {
             randomizeColors();
             if (state.engineRunning) {
-                // Persistent Boot: Restore UI and start loops
                 document.getElementById('lblProfit').innerText = (state.investment * state.profitTarget).toFixed(2);
                 document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
                 document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage);
@@ -225,6 +230,39 @@
             goToResults();
         }
 
+        function forceNewPick() {
+            // Stop existing loops
+            if(timerInterval) clearInterval(timerInterval);
+            if(livePriceInterval) clearInterval(livePriceInterval);
+            
+            // Wipe today's active session data and current chain
+            state.todayAverage = 0;
+            state.tradesToday = 0;
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0 };
+            state.next = { pair: "", buyPrice: 0 };
+            state.engineRunning = false; // This triggers a fresh scan when "I'm ready!" is pressed
+            
+            // Reset UI elements to default states
+            document.getElementById('lblAccToday').innerText = "0";
+            document.getElementById('lblAccPrice').innerText = "0";
+            document.getElementById('lblAccTimeline').innerText = "0";
+            document.getElementById('lblCountdown').innerText = "00hr 00min";
+            
+            document.getElementById('lblNowName').innerText = "Determining...";
+            document.getElementById('lblNowSell').innerText = "0.00";
+            document.getElementById('lblNowCurrent').innerText = "0.00";
+            
+            document.getElementById('lblNextName').innerText = "Scanning...";
+            document.getElementById('lblNextBuy').innerText = "0.00";
+            document.getElementById('lblNextCurrent').innerText = "0.00";
+            
+            log("Engine reset. Awaiting new startup...");
+            saveState();
+            
+            // Return to Home screen for fresh routing
+            showPage('home');
+        }
+
         function restoreUI() {
             if(state.now.pair) {
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
@@ -252,7 +290,6 @@
             log("Session restored. Tracking active timeline...");
             midnightCheckInterval = setInterval(checkMidnightReset, 60000);
             
-            // Restart timer visually based on saved target timestamp
             startCountdownVisuals();
             livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
@@ -290,7 +327,6 @@
                 let marketScores = [];
                 for(let pair of usdPairs) {
                     try {
-                        // Adjusted to 15m intervals for higher velocity trades
                         const r = await fetch(`${KRAKEN_PROXY}OHLC?pair=${pair}&interval=15`);
                         const j = await r.json();
                         if(j.error && j.error.length > 0) continue;
@@ -335,7 +371,6 @@
             if(scores.length >= 2) {
                 // Setup NOW
                 state.now.pair = scores[0].pair;
-                // Since this is the initial boot, we simulate the 'remembered' buy price as slightly lower than market
                 state.now.buyPrice = scores[0].price * 0.99; 
                 state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
                 state.now.peakPrice = scores[0].price;
@@ -345,7 +380,6 @@
 
                 // Setup NEXT
                 state.next.pair = scores[1].pair;
-                // Generate genuine lower buy price for Next
                 state.next.buyPrice = scores[1].price * 0.985; 
 
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
@@ -360,10 +394,8 @@
         async function triggerChainShift() {
             log("Countdown 00:00 reached. Executing chain shift...");
             
-            // Finalize block accuracy
             let finalPriceAcc = parseFloat(document.getElementById('lblAccPrice').innerText) || 0;
             
-            // Timeline Accuracy: Peak compared to target during the allotted time
             let peakRange = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
             let finalTimelineAcc = Math.max(-100, Math.min(100, peakRange)); 
             if(state.now.peakPrice >= state.now.sellTarget) finalTimelineAcc = 100; 
@@ -376,7 +408,6 @@
             state.tradesToday++;
             document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
 
-            // Shift Next to Now, remembering the exact Buy Price generated previously
             state.now.pair = state.next.pair;
             state.now.buyPrice = state.next.buyPrice; 
             state.now.sellTarget = state.now.buyPrice * (1 + state.profitTarget);
@@ -393,29 +424,13 @@
             
             if(newNext) {
                 state.next.pair = newNext.pair;
-                state.next.buyPrice = newNext.price * 0.985; // Generate lower target for new cycle
+                state.next.buyPrice = newNext.price * 0.985; 
                 document.getElementById('lblNextName').innerText = cleanName(state.next.pair);
                 document.getElementById('lblNextBuy').innerText = state.next.buyPrice.toFixed(4);
                 
                 setTargetTime(newNext.score);
                 saveState();
             }
-        }
-
-        function forceNewPick() {
-            // User requested: wipe TODAY average and force fresh chain
-            state.todayAverage = 0;
-            state.tradesToday = 0;
-            document.getElementById('lblAccToday').innerText = "0";
-            document.getElementById('lblAccPrice').innerText = "0";
-            document.getElementById('lblAccTimeline').innerText = "0";
-            
-            log("New Pick override: Today's average wiped. Scanning fresh targets...");
-            
-            if(timerInterval) clearInterval(timerInterval);
-            document.getElementById('lblCountdown').innerText = "00hr 00min";
-            
-            initialPopulateChain(); 
         }
 
         async function updateLivePricesAndAccuracy() {
@@ -438,7 +453,6 @@
                         
                         if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
 
-                        // Calculate Accuracy using the locked-in Buy Price spread
                         let priceProgress = ((nowCurrent - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
                         let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); 
                         document.getElementById('lblAccPrice').innerText = Math.round(displayPriceAcc);
@@ -453,11 +467,9 @@
         }
 
         function setTargetTime(momentumScore) {
-            // Calculate total seconds needed based on score
             let blocksNeeded = Math.max(1, Math.floor((100 - momentumScore) / 10)); 
             let totalSeconds = blocksNeeded * 15 * 60; 
             
-            // Set exact real-world timestamp for persistence
             state.targetSellTime = Date.now() + (totalSeconds * 1000);
             saveState();
             
