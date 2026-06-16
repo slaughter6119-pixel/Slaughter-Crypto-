@@ -173,6 +173,7 @@
             state = JSON.parse(JSON.stringify(defaultState));
         }
 
+        // Final fail-safes ensuring nothing causes a top-level script crash
         if(state.lastDate === undefined) state.lastDate = new Date().getDate();
         if(state.strictness === undefined) state.strictness = 1.0;
         
@@ -518,7 +519,6 @@
             if(scores.length >= 2) {
                 state.now.pair = scores[0].pair;
                 state.now.expectedGain = scores[0].expectedGain;
-                // REMOVED the * 0.99 artificial discount. Starts perfectly at the live market value.
                 state.now.buyPrice = scores[0].price; 
                 state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
                 state.now.peakPrice = scores[0].price;
@@ -548,7 +548,36 @@
         async function triggerChainShift() {
             log("Executing chain shift and analyzing trade accuracy...");
             
+            // --- FINAL SYNC FIX: Guarantee real accuracy even if phone was asleep ---
+            try {
+                const pairQuery = `${state.now.pair},${state.next.pair}`;
+                const res = await fetch(`${KRAKEN_PROXY}Ticker?pair=${pairQuery}`);
+                const json = await res.json();
+                if(json.result) {
+                    const keys = Object.keys(json.result);
+                    let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
+                    let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','').replace('USD','')));
+                    
+                    if(nowKey) {
+                        let finalCurrent = parseFloat(json.result[nowKey].c[0]);
+                        state.now.currentPrice = finalCurrent;
+                        if(finalCurrent > state.now.peakPrice) state.now.peakPrice = finalCurrent;
+                    }
+                    if(nextKey) {
+                        let finalNextCurrent = parseFloat(json.result[nextKey].c[0]);
+                        state.next.currentPrice = finalNextCurrent;
+                        if (state.next.lowestPrice === 0 || finalNextCurrent < state.next.lowestPrice) {
+                            state.next.lowestPrice = finalNextCurrent;
+                        }
+                    }
+                }
+            } catch(e) {
+                log("Final price sync failed. Using last known data.");
+            }
+            // ----------------------------------------------------------------------
+            
             let targetDiff = state.now.sellTarget - state.now.buyPrice;
+            if (targetDiff <= 0) targetDiff = 0.000001; // Mathematical failsafe to prevent NaN
             
             let peakRange = ((state.now.peakPrice - state.now.buyPrice) / targetDiff) * 100;
             let finalPriceAcc = Math.max(-100, Math.min(100, peakRange)); 
@@ -559,8 +588,8 @@
             let finalTimelineAcc = Math.max(-100, Math.min(100, endRange));
             if(endCurrentPrice >= state.now.sellTarget) finalTimelineAcc = 100;
 
-            finalPriceAcc = Math.round(finalPriceAcc);
-            finalTimelineAcc = Math.round(finalTimelineAcc);
+            finalPriceAcc = Math.round(finalPriceAcc || 0);
+            finalTimelineAcc = Math.round(finalTimelineAcc || 0);
 
             let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
             
@@ -651,11 +680,14 @@
                             saveState(); 
                         }
 
-                        let priceProgress = ((state.now.peakPrice - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+                        let targetDiff = state.now.sellTarget - state.now.buyPrice;
+                        if (targetDiff <= 0) targetDiff = 0.000001;
+
+                        let priceProgress = ((state.now.peakPrice - state.now.buyPrice) / targetDiff) * 100;
                         let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); 
                         document.getElementById('lblAccPrice').innerText = Math.round(displayPriceAcc);
                         
-                        let timelineProgress = ((nowCurrent - state.now.buyPrice) / (state.now.sellTarget - state.now.buyPrice)) * 100;
+                        let timelineProgress = ((nowCurrent - state.now.buyPrice) / targetDiff) * 100;
                         let displayTimeAcc = Math.max(-100, Math.min(100, timelineProgress));
                         document.getElementById('lblAccTimeline').innerText = Math.round(displayTimeAcc);
                     }
