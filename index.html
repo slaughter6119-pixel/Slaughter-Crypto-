@@ -303,8 +303,18 @@
             }
         }
 
+        // --- NEW DICTIONARY TRANSLATOR FOR LEGACY TICKERS ---
         function cleanName(pairName) {
-            return pairName.replace(/USDT$/, '').replace(/USD$/, '');
+            let clean = pairName.replace(/USDT$/, '').replace(/USD$/, '');
+            const krakenDictionary = {
+                'XXBTZ': 'BTC', 'XXBT': 'BTC', 'XBT': 'BTC',
+                'XETHZ': 'ETH', 'XETH': 'ETH',
+                'XXRPZ': 'XRP', 'XXRP': 'XRP',
+                'XLTCZ': 'LTC', 'XLTC': 'LTC',
+                'XXMRZ': 'XMR', 'XXLMZ': 'XLM',
+                'XZECZ': 'ZEC', 'XETCZ': 'ETC'
+            };
+            return krakenDictionary[clean] || clean;
         }
 
         function updateExpectedProfitDisplay() {
@@ -549,7 +559,6 @@
                             const rsi = calcRSI(closes, 14);
                             const avgVol = calcSMA(volumes, 14); 
                             
-                            // True volatility scale: base target entirely on ATR movement profile
                             let predictedGain = (atr * 1.5) / currentPrice; 
                             predictedGain = Math.max(0.005, Math.min(0.04, predictedGain)); 
                             
@@ -591,7 +600,7 @@
 
                 state.next.pair = scores[1].pair;
                 state.next.expectedGain = scores[1].expectedGain;
-                state.next.buyPrice = scores[1].price; // Zero artificial entry discount
+                state.next.buyPrice = scores[1].price; 
                 state.next.lowestPrice = scores[1].price; 
                 state.next.currentPrice = scores[1].price;
 
@@ -674,7 +683,12 @@
             document.getElementById('lblAccPrice').innerText = "0";
             document.getElementById('lblAccTimeline').innerText = "0";
 
-            // Shift Next into Now using its clean live price anchor
+            let shiftedBuyPrice = state.next.buyPrice;
+            if (state.next.lowestPrice > state.next.buyPrice && state.next.currentPrice > 0) {
+                shiftedBuyPrice = state.next.currentPrice;
+                log(`Next target buy price not reached. Adjusting Now buy price to live market value.`);
+            }
+
             state.now.pair = state.next.pair;
             state.now.expectedGain = state.next.expectedGain;
             state.now.buyPrice = state.next.currentPrice > 0 ? state.next.currentPrice : state.next.buyPrice; 
@@ -697,7 +711,7 @@
             if(newNext) {
                 state.next.pair = newNext.pair;
                 state.next.expectedGain = newNext.expectedGain;
-                state.next.buyPrice = newNext.price; // Clean, non-discounted structural entry
+                state.next.buyPrice = newNext.price; 
                 state.next.lowestPrice = newNext.price; 
                 state.next.currentPrice = newNext.price;
                 
