@@ -712,10 +712,14 @@
 
                             const ema9 = calcEMA(closes, 9), ema21 = calcEMA(closes, 21), ema50 = calcEMA(closes, 50);
                             let e9 = ema9[ema9.length-1], e21 = ema21[ema21.length-1], e50 = ema50[ema50.length-1];
-                            if (!(e9 > e21 && e21 > e50)) continue; 
+                            
+                            // RELAXED EMA: Short term just needs to be above long term.
+                            if (e9 <= e50) continue; 
 
                             const adx = calcADX(highs, lows, closes, 14);
-                            if (adx < 25) continue; 
+                            
+                            // RELAXED ADX: Dropped to 20 to allow moderate trends.
+                            if (adx < 20) continue; 
 
                             let spread = highs[highs.length-1] - lows[lows.length-1];
                             let closePos = (currentPrice - lows[lows.length-1]) / (spread || 1);
