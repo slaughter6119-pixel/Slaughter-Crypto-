@@ -193,8 +193,12 @@
         }
 
         function requestNotificationPermission() {
-            if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-                Notification.requestPermission();
+            try {
+                if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission().catch(e => console.log("Notification catch:", e));
+                }
+            } catch (e) {
+                console.log("Notification error:", e);
             }
         }
 
@@ -215,36 +219,44 @@
         }
 
         function randomizeLetterColors() {
-            document.querySelectorAll('.random-color').forEach(el => {
-                if (!el.hasAttribute('data-text')) {
-                    el.setAttribute('data-text', el.innerText);
-                }
-                let text = el.getAttribute('data-text');
-                let newHtml = '';
-                for (let i = 0; i < text.length; i++) {
-                    let char = text[i];
-                    if (char === ' ' || char === '-') {
-                        newHtml += char;
-                    } else {
-                        let color = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
-                        newHtml += `<span style="color: ${color};">${char}</span>`;
+            try {
+                document.querySelectorAll('.random-color').forEach(el => {
+                    if (!el.hasAttribute('data-text')) {
+                        el.setAttribute('data-text', el.innerText || el.textContent);
                     }
-                }
-                el.innerHTML = newHtml;
-            });
+                    let text = el.getAttribute('data-text');
+                    if(!text) return;
+                    let newHtml = '';
+                    for (let i = 0; i < text.length; i++) {
+                        let char = text[i];
+                        if (char === ' ' || char === '-') {
+                            newHtml += char;
+                        } else {
+                            let color = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+                            newHtml += `<span style="color: ${color};">${char}</span>`;
+                        }
+                    }
+                    el.innerHTML = newHtml;
+                });
+            } catch (e) { console.error("Colorizer error:", e); }
         }
 
         window.onload = async () => {
-            randomizeLetterColors();
-            await checkDailyReset(); 
+            try {
+                randomizeLetterColors();
+                await checkDailyReset(); 
 
-            if (state.engineRunning) {
-                document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage || 0);
-                document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage || 0);
-                restoreUI();
-                showPage('results'); 
-                await resumeEngine();
-            } else {
+                if (state.engineRunning) {
+                    document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage || 0);
+                    document.getElementById('lblAccTotal').innerText = Math.round(state.totalAverage || 0);
+                    restoreUI();
+                    showPage('results'); 
+                    await resumeEngine();
+                } else {
+                    showPage('home');
+                }
+            } catch (e) {
+                console.error("Initialization error:", e);
                 showPage('home');
             }
         };
@@ -318,8 +330,11 @@
         }
 
         function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            try {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                let target = document.getElementById(id);
+                if (target) target.classList.add('active');
+            } catch(e) { console.error("Navigation error:", e); }
         }
 
         function log(msg) {
@@ -349,7 +364,8 @@
         }
 
         function saveMoneyAndStart() {
-            requestNotificationPermission(); 
+            showPage('results'); // Force UI transition immediately
+            
             const valInput = document.getElementById('investmentInput').value.replace('$', '').trim();
             let parsed = parseFloat(valInput);
             state.investment = (!isNaN(parsed) && valInput !== "") ? parsed : 10.00;
@@ -357,19 +373,24 @@
             document.getElementById('investmentInput').value = '';
 
             if(state.engineRunning) {
-                showPage('results');
                 updateExpectedProfitDisplay(); 
             } else {
-                goToResults(); 
+                if(state.engineRunning) executeFullReset();
+                startEngine();
             }
+            
+            requestNotificationPermission(); 
+            randomizeLetterColors();
         }
 
         function goToResults() {
-            requestNotificationPermission(); 
-            showPage('results');
-            randomizeLetterColors(); 
+            showPage('results'); // Force UI transition immediately
+            
             if(state.engineRunning) executeFullReset();
             startEngine();
+            
+            requestNotificationPermission(); 
+            randomizeLetterColors(); 
         }
 
         function executeFullReset() {
@@ -408,10 +429,10 @@
         }
 
         function pauseAndGoToHome() {
+            showPage('home'); // Force UI transition immediately
             if(livePriceInterval) clearInterval(livePriceInterval);
             if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
             log("Analysis paused. Standing by on Home.");
-            showPage('home');
         }
 
         function restoreUI() {
@@ -437,6 +458,7 @@
             saveState();
             
             log(`Math Engine. Strictness: ${state.strictness.toFixed(2)}x | Ceiling: ${(state.maxProfitCeiling*100).toFixed(0)}%`);
+            if (midnightCheckInterval) clearInterval(midnightCheckInterval);
             midnightCheckInterval = setInterval(checkDailyReset, 60000); 
             
             if(!state.now.pair && !state.standbyForMidnight) {
@@ -445,6 +467,7 @@
             
             if (!state.standbyForMidnight) {
                 updateLivePricesAndAccuracy(); 
+                if (livePriceInterval) clearInterval(livePriceInterval);
                 livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
             }
         }
@@ -454,10 +477,13 @@
             let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
             if (secondsOffline > 45) await syncOfflineHistory();
 
+            if (midnightCheckInterval) clearInterval(midnightCheckInterval);
             midnightCheckInterval = setInterval(checkDailyReset, 60000);
+            
             if (!state.standbyForMidnight) {
                 startCountdownVisuals();
                 updateLivePricesAndAccuracy(); 
+                if (livePriceInterval) clearInterval(livePriceInterval);
                 livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
             }
         }
@@ -514,6 +540,7 @@
                 if (state.standbyForMidnight) {
                     state.standbyForMidnight = false;
                     await initialPopulateChain();
+                    if (livePriceInterval) clearInterval(livePriceInterval);
                     livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
                 }
                 saveState();
@@ -743,4 +770,214 @@
                         }
                         if(nextKey) {
                             let finalNextCurrent = parseFloat(json.result[nextKey].c[0]);
-                            state.next.currentPrice = finalNextCurrent
+                            state.next.currentPrice = finalNextCurrent;
+                            if (state.next.lowestPrice === 0 || finalNextCurrent < state.next.lowestPrice) state.next.lowestPrice = finalNextCurrent;
+                        }
+                    }
+                } catch(e) {}
+            }
+            
+            let targetDiff = state.now.sellTarget - state.now.buyPrice;
+            if (targetDiff <= 0) targetDiff = 0.000001; 
+            
+            let peakRange = ((state.now.peakPrice - state.now.buyPrice) / targetDiff) * 100;
+            let finalPriceAcc = Math.max(-100, Math.min(100, peakRange)); 
+            if(state.now.peakPrice >= state.now.sellTarget) finalPriceAcc = 100; 
+
+            let endCurrentPrice = state.now.currentPrice || state.now.peakPrice;
+            let endRange = ((endCurrentPrice - state.now.buyPrice) / targetDiff) * 100;
+            let finalTimelineAcc = Math.max(-100, Math.min(100, endRange));
+            if(endCurrentPrice >= state.now.sellTarget) finalTimelineAcc = 100;
+
+            finalPriceAcc = Math.round(finalPriceAcc || 0);
+            finalTimelineAcc = Math.round(finalTimelineAcc || 0);
+
+            if (finalPriceAcc >= 100) triggerAlarm(state.now.pair, state.now.currentPrice);
+
+            let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
+            
+            if (blockAverage < 90) {
+                state.strictness = Math.min(3.0, state.strictness + 0.15); 
+                log(`Accuracy missed target. strictness raised to ${state.strictness.toFixed(2)}x`);
+            } else {
+                state.strictness = Math.max(1.0, state.strictness - 0.05); 
+                log(`Target secured! strictness relaxed to ${state.strictness.toFixed(2)}x`);
+            }
+
+            if (state.tradesToday === 0) {
+                state.todayAverage = blockAverage;
+            } else {
+                state.todayAverage = Math.round((state.todayAverage + blockAverage) / 2);
+            }
+            
+            state.tradesToday++;
+            document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
+            document.getElementById('lblAccPrice').innerText = "0";
+            document.getElementById('lblAccTimeline').innerText = "0";
+
+            let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
+            let msNeededForNext = Math.max(1, Math.min(48, state.next.blocks || 1)) * 30 * 60 * 1000;
+
+            if (msNeededForNext >= msToMidnight) {
+                log("Proactive Midnight Lockout: Remaining time too short for next cycle. Standing by.");
+                state.standbyForMidnight = true;
+                
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1 };
+                state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, equalToNotified: false };
+                
+                document.getElementById('lblCountdown').classList.add('standby-alert');
+                document.getElementById('lblCountdown').innerText = "STANDBY";
+                document.getElementById('lblNowName').innerText = "-";
+                document.getElementById('lblNextName').innerText = "-";
+                
+                if (timerInterval) clearInterval(timerInterval);
+                if (livePriceInterval) clearInterval(livePriceInterval);
+                saveState();
+                return;
+            }
+
+            state.now.pair = state.next.pair;
+            state.now.expectedGain = state.next.expectedGain;
+            state.now.buyPrice = state.next.buyPrice; 
+            state.now.sellTarget = state.next.originalSellTarget; 
+            state.now.currentPrice = state.next.currentPrice > 0 ? state.next.currentPrice : state.now.buyPrice;
+            state.now.peakPrice = state.now.currentPrice; 
+            state.now.blocks = state.next.blocks || 1;
+            
+            document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
+            document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
+            document.getElementById('lblNowCurrent').innerText = formatPrice(state.now.currentPrice);
+            updateExpectedProfitDisplay();
+
+            document.getElementById('lblNextName').innerText = "Scanning...";
+            document.getElementById('lblNextBuy').innerText = "0.00";
+            document.getElementById('lblNextCurrent').innerText = "0.00";
+            
+            setTargetTime(state.now.blocks);
+            saveState();
+
+            findNextCoinRetrier();
+        }
+
+        async function updateLivePricesAndAccuracy() {
+            if(!state.now.pair || !state.next.pair || isSyncingHistory || state.standbyForMidnight) return;
+
+            try {
+                const pairQuery = `${state.now.pair},${state.next.pair}`;
+                const res = await fetch(`${KRAKEN_PROXY}Ticker?pair=${pairQuery}`);
+                const json = await res.json();
+                
+                if(json.result) {
+                    const keys = Object.keys(json.result);
+                    let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
+                    let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','').replace('USD','')));
+                    
+                    if(nowKey) {
+                        let nowCurrent = parseFloat(json.result[nowKey].c[0]);
+                        if (nowCurrent !== state.now.currentPrice) {
+                            state.now.currentPrice = nowCurrent;
+                            document.getElementById('lblNowCurrent').innerText = formatPrice(nowCurrent);
+                            randomizeLetterColors(); 
+                        }
+                        
+                        if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
+
+                        let targetDiff = state.now.sellTarget - state.now.buyPrice;
+                        if (targetDiff <= 0) targetDiff = 0.000001;
+
+                        let priceProgress = ((state.now.peakPrice - state.now.buyPrice) / targetDiff) * 100;
+                        let displayPriceAcc = Math.max(-100, Math.min(100, priceProgress)); 
+                        document.getElementById('lblAccPrice').innerText = Math.round(displayPriceAcc);
+                        
+                        let timelineProgress = ((nowCurrent - state.now.buyPrice) / targetDiff) * 100;
+                        let displayTimeAcc = Math.max(-100, Math.min(100, timelineProgress));
+                        document.getElementById('lblAccTimeline').innerText = Math.round(displayTimeAcc);
+                    }
+                    
+                    if(nextKey) {
+                        let nextCurrent = parseFloat(json.result[nextKey].c[0]);
+                        state.next.currentPrice = nextCurrent;
+                        if (state.next.lowestPrice === 0 || nextCurrent < state.next.lowestPrice) state.next.lowestPrice = nextCurrent;
+                        
+                        document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
+
+                        if (nextCurrent <= state.next.buyPrice && !state.next.equalToNotified) {
+                            state.next.equalToNotified = true;
+                            triggerAlarm(state.next.pair, nextCurrent, false, true);
+                        }
+
+                        let threshold = state.next.buyPrice * 0.98;
+                        if (nextCurrent <= threshold) {
+                            state.next.buyPrice = nextCurrent;
+                            document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
+                            triggerAlarm(state.next.pair, nextCurrent, true, false);
+                        }
+                    }
+                    
+                    state.lastTick = Date.now();
+                    saveState();
+
+                    if (state.now.currentPrice >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
+                        log("Profit target hit early! Executing immediate cash-out...");
+                        triggerAlarm(state.now.pair, state.now.currentPrice);
+                        
+                        if (timerInterval) clearInterval(timerInterval);
+                        isShifting = true;
+                        triggerChainShift().finally(() => { isShifting = false; });
+                        return; 
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function setTargetTime(blocksNeeded) {
+            let safeBlocks = Math.max(1, Math.min(48, blocksNeeded || 1)); 
+            let totalSeconds = safeBlocks * 30 * 60; 
+            
+            let projectedEnd = Date.now() + (totalSeconds * 1000);
+            let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
+            
+            if ((totalSeconds * 1000) >= msToMidnight) {
+                state.standbyForMidnight = true;
+                log("Trade lockout: Projected time crosses midnight. Engine standing by for reset.");
+                document.getElementById('lblCountdown').classList.add('standby-alert');
+                document.getElementById('lblCountdown').innerText = "STANDBY";
+            } else {
+                state.targetSellTime = projectedEnd;
+                document.getElementById('lblCountdown').classList.remove('standby-alert');
+                startCountdownVisuals();
+            }
+            saveState();
+        }
+
+        function startCountdownVisuals() {
+            if(timerInterval) clearInterval(timerInterval);
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                if (state.standbyForMidnight) return;
+                updateTimerDisplay();
+                if(Date.now() >= state.targetSellTime && document.visibilityState === "visible" && !isShifting) {
+                    clearInterval(timerInterval);
+                    isShifting = true;
+                    triggerChainShift().finally(() => { isShifting = false; });
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            let diffMs = state.targetSellTime - Date.now();
+            if(diffMs <= 0) {
+                document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
+                if (document.visibilityState === "hidden" && timerInterval) clearInterval(timerInterval);
+                return;
+            }
+            let diffSecs = Math.floor(diffMs / 1000);
+            let hrs = Math.floor(diffSecs / 3600);
+            let mins = Math.floor((diffSecs % 3600) / 60);
+            let secs = diffSecs % 60;
+            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min ${secs.toString().padStart(2, '0')}sec`;
+        }
+    </script>
+</body>
+</html>
