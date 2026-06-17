@@ -40,12 +40,22 @@
         
         .accuracy-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 8px; font-size: 16px; }
         .accuracy-label { text-align: left; }
-        .accuracy-data { color: #FFFFFF; font-weight: bold; text-align: right; }
+        .accuracy-data { color: #FFFFFF; font-weight: bold; text-align: right; transition: all 0.3s ease; }
 
         .log-box { width: 100%; max-height: 80px; background: #111; border: 1px solid #333; font-size: 11px; color: #00FF00; overflow-y: auto; text-align: left; padding: 5px; margin-top: 20px; font-family: monospace; }
         
         .standby-alert { color: #FF4500; font-weight: bold; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        @keyframes pulse-green {
+            0% { opacity: 1; color: #00FF00; text-shadow: 0 0 5px #00FF00; }
+            50% { opacity: 0.4; color: #00FF00; text-shadow: none; }
+            100% { opacity: 1; color: #00FF00; text-shadow: 0 0 5px #00FF00; }
+        }
+        .profit-pulse {
+            animation: pulse-green 1.5s infinite;
+            color: #00FF00 !important;
+        }
     </style>
 </head>
 <body>
@@ -73,16 +83,20 @@
             
             <div class="header-pink" style="font-weight: normal;"><u>Results</u></div>
             
-            <div class="flex-row">
+            <div class="flex-row" style="margin-bottom: 10px;">
                 <span><span class="random-color">Countdown to sell-</span> <br><span class="white-data" id="lblCountdown">00hr 00min 00sec</span></span>
                 <span><span class="random-color">Profit expected-</span> <br><span class="white-data">$<span id="lblProfit">0.00</span></span></span>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span class="random-color">Transactions today-</span> <span class="white-data" id="lblTradesToday">0</span>
             </div>
 
             <div class="header-currency" style="font-weight: normal;"><u>Currency</u></div>
             
             <div class="flex-row">
                 <div class="flex-col">
-                    <span class="random-color">Now-</span>
+                    <span class="random-color" style="font-size: 21px;">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
                     
                     <span class="random-color" style="margin-top: 10px;">Sell price-</span>
@@ -93,7 +107,7 @@
                 </div>
                 
                 <div class="flex-col">
-                    <span class="random-color">Next-</span>
+                    <span class="random-color" style="font-size: 21px;">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
                     
                     <span class="random-color" style="margin-top: 10px;">Buy price-</span>
@@ -364,7 +378,7 @@
         }
 
         function saveMoneyAndStart() {
-            showPage('results'); // Force UI transition immediately
+            showPage('results'); 
             
             const valInput = document.getElementById('investmentInput').value.replace('$', '').trim();
             let parsed = parseFloat(valInput);
@@ -384,7 +398,7 @@
         }
 
         function goToResults() {
-            showPage('results'); // Force UI transition immediately
+            showPage('results'); 
             
             if(state.engineRunning) executeFullReset();
             startEngine();
@@ -415,6 +429,7 @@
             document.getElementById('lblAccPrice').innerText = "0";
             document.getElementById('lblAccTimeline').innerText = "0";
             document.getElementById('lblCountdown').innerText = "00hr 00min 00sec";
+            document.getElementById('lblTradesToday').innerText = "0";
             
             document.getElementById('lblNowName').innerText = "Determining...";
             document.getElementById('lblNowSell').innerText = "0.00";
@@ -429,7 +444,7 @@
         }
 
         function pauseAndGoToHome() {
-            showPage('home'); // Force UI transition immediately
+            showPage('home'); 
             if(livePriceInterval) clearInterval(livePriceInterval);
             if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
             log("Analysis paused. Standing by on Home.");
@@ -450,6 +465,7 @@
                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                 document.getElementById('lblNextCurrent').innerText = formatPrice(state.next.currentPrice);
             }
+            document.getElementById('lblTradesToday').innerText = state.tradesToday || "0";
         }
 
         async function startEngine() {
@@ -534,6 +550,7 @@
                 document.getElementById('lblAccTotal').innerText = state.totalAverage;
                 document.getElementById('lblAccToday').innerText = "0";
                 document.getElementById('lblProfit').innerText = "0.00";
+                document.getElementById('lblTradesToday').innerText = "0";
                 
                 log("Daily logs calculated. Midnight lockout lifted.");
                 
@@ -760,8 +777,8 @@
                     const json = await res.json();
                     if(json.result) {
                         const keys = Object.keys(json.result);
-                        let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
-                        let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','').replace('USD','')));
+                        let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','replace','USD','')));
+                        let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','replace','USD','')));
                         
                         if(nowKey) {
                             let finalCurrent = parseFloat(json.result[nowKey].c[0]);
@@ -811,9 +828,13 @@
             }
             
             state.tradesToday++;
+            document.getElementById('lblTradesToday').innerText = state.tradesToday;
             document.getElementById('lblAccToday').innerText = Math.round(state.todayAverage);
             document.getElementById('lblAccPrice').innerText = "0";
-            document.getElementById('lblAccTimeline').innerText = "0";
+            
+            let timelineEl = document.getElementById('lblAccTimeline');
+            timelineEl.innerText = "0";
+            timelineEl.classList.remove('profit-pulse');
 
             let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
             let msNeededForNext = Math.max(1, Math.min(48, state.next.blocks || 1)) * 30 * 60 * 1000;
@@ -891,93 +912,9 @@
                         
                         let timelineProgress = ((nowCurrent - state.now.buyPrice) / targetDiff) * 100;
                         let displayTimeAcc = Math.max(-100, Math.min(100, timelineProgress));
-                        document.getElementById('lblAccTimeline').innerText = Math.round(displayTimeAcc);
-                    }
-                    
-                    if(nextKey) {
-                        let nextCurrent = parseFloat(json.result[nextKey].c[0]);
-                        state.next.currentPrice = nextCurrent;
-                        if (state.next.lowestPrice === 0 || nextCurrent < state.next.lowestPrice) state.next.lowestPrice = nextCurrent;
-                        
-                        document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
+                        let timelineEl = document.getElementById('lblAccTimeline');
+                        timelineEl.innerText = Math.round(displayTimeAcc);
 
-                        if (nextCurrent <= state.next.buyPrice && !state.next.equalToNotified) {
-                            state.next.equalToNotified = true;
-                            triggerAlarm(state.next.pair, nextCurrent, false, true);
-                        }
-
-                        let threshold = state.next.buyPrice * 0.98;
-                        if (nextCurrent <= threshold) {
-                            state.next.buyPrice = nextCurrent;
-                            document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
-                            triggerAlarm(state.next.pair, nextCurrent, true, false);
-                        }
-                    }
-                    
-                    state.lastTick = Date.now();
-                    saveState();
-
-                    if (state.now.currentPrice >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
-                        log("Profit target hit early! Executing immediate cash-out...");
-                        triggerAlarm(state.now.pair, state.now.currentPrice);
-                        
-                        if (timerInterval) clearInterval(timerInterval);
-                        isShifting = true;
-                        triggerChainShift().finally(() => { isShifting = false; });
-                        return; 
-                    }
-                }
-            } catch(e) {}
-        }
-
-        function setTargetTime(blocksNeeded) {
-            let safeBlocks = Math.max(1, Math.min(48, blocksNeeded || 1)); 
-            let totalSeconds = safeBlocks * 30 * 60; 
-            
-            let projectedEnd = Date.now() + (totalSeconds * 1000);
-            let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
-            
-            if ((totalSeconds * 1000) >= msToMidnight) {
-                state.standbyForMidnight = true;
-                log("Trade lockout: Projected time crosses midnight. Engine standing by for reset.");
-                document.getElementById('lblCountdown').classList.add('standby-alert');
-                document.getElementById('lblCountdown').innerText = "STANDBY";
-            } else {
-                state.targetSellTime = projectedEnd;
-                document.getElementById('lblCountdown').classList.remove('standby-alert');
-                startCountdownVisuals();
-            }
-            saveState();
-        }
-
-        function startCountdownVisuals() {
-            if(timerInterval) clearInterval(timerInterval);
-            updateTimerDisplay();
-
-            timerInterval = setInterval(() => {
-                if (state.standbyForMidnight) return;
-                updateTimerDisplay();
-                if(Date.now() >= state.targetSellTime && document.visibilityState === "visible" && !isShifting) {
-                    clearInterval(timerInterval);
-                    isShifting = true;
-                    triggerChainShift().finally(() => { isShifting = false; });
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            let diffMs = state.targetSellTime - Date.now();
-            if(diffMs <= 0) {
-                document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
-                if (document.visibilityState === "hidden" && timerInterval) clearInterval(timerInterval);
-                return;
-            }
-            let diffSecs = Math.floor(diffMs / 1000);
-            let hrs = Math.floor(diffSecs / 3600);
-            let mins = Math.floor((diffSecs % 3600) / 60);
-            let secs = diffSecs % 60;
-            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min ${secs.toString().padStart(2, '0')}sec`;
-        }
-    </script>
-</body>
-</html>
+                        let activeInvestment = state.investment === 0 ? 10.00 : state.investment;
+                        if (state.now.buyPrice > 0) {
+                            let currentProfit = activeInvestment * ((nowCurrent -
