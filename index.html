@@ -397,8 +397,8 @@
 
             if(state.engineRunning) {
                 updateExpectedProfitDisplay(); 
+                resumeEngine();
             } else {
-                if(state.engineRunning) executeFullReset();
                 startEngine();
             }
             
