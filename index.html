@@ -56,9 +56,36 @@
             animation: pulse-green 1.5s infinite;
             color: #00FF00 !important;
         }
+
+        /* IN-APP TOAST NOTIFICATION */
+        #toast-banner {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.95);
+            border: 2px solid #FF4500;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            z-index: 1000;
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+        }
+        #toast-banner.show {
+            top: 20px;
+        }
     </style>
 </head>
 <body>
+
+    <!-- UI TOAST -->
+    <div id="toast-banner">Alert message here</div>
 
     <div id="home" class="page text-center active">
         <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
@@ -165,6 +192,7 @@
         const COLOR_PALETTE = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
         const SCAN_INTERVALS = [30, 15, 10];
         let audioCtx = null;
+        let toastTimeout = null;
 
         let defaultState = {
             investment: 0, 
@@ -245,42 +273,33 @@
             } catch(e) {}
         }
 
-        function requestNotificationPermission() {
-            try {
-                if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-                    Notification.requestPermission().catch(e => console.log("Notification catch:", e));
-                }
-            } catch (e) {
-                console.log("Notification error:", e);
-            }
-        }
-
         function triggerAlarm(type, pair, price) {
             let coin = cleanName(pair);
-            let title = "";
             let msg = "";
             
             playBeep();
             
             if (type === 'SELL') {
-                title = "Crypto Slaughter: SELL NOW";
                 msg = `Target Secured! Sell ${coin} at $${formatPrice(price)}.`;
             } else if (type === 'ENTRY') {
-                title = "Crypto Slaughter: ENTRY REACHED";
                 msg = `${coin} reached entry price: $${formatPrice(price)}.`;
             } else if (type === 'DIP') {
-                title = "Crypto Slaughter: DIP TRAILING";
-                msg = `Price dropped 2%. New buy floor for ${coin} at $${formatPrice(price)}.`;
+                msg = `Price dropped 2%. New floor for ${coin} at $${formatPrice(price)}.`;
             } else if (type === 'LOCKED') {
-                title = "Crypto Slaughter: TARGET LOCKED";
                 msg = `New target acquired: ${coin}. Scanning strictness reset to 1.00x.`;
             }
 
             log(`ALARM: ${msg}`);
             
-            if ("Notification" in window && Notification.permission === "granted") {
-                try { new Notification(title, { body: msg }); } catch (e) { } 
-            }
+            // In-app visual Toast overlay
+            const toast = document.getElementById('toast-banner');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+
             if (navigator.vibrate) {
                 if (type === 'ENTRY') navigator.vibrate([200, 100, 200]);
                 else if (type === 'DIP') navigator.vibrate([150, 100, 150]);
@@ -449,8 +468,6 @@
             } else {
                 startEngine();
             }
-            
-            requestNotificationPermission(); 
             randomizeLetterColors();
         }
 
@@ -460,8 +477,6 @@
             
             if(state.engineRunning) executeFullReset();
             startEngine();
-            
-            requestNotificationPermission(); 
             randomizeLetterColors(); 
         }
 
@@ -713,12 +728,9 @@
                             const ema9 = calcEMA(closes, 9), ema21 = calcEMA(closes, 21), ema50 = calcEMA(closes, 50);
                             let e9 = ema9[ema9.length-1], e21 = ema21[ema21.length-1], e50 = ema50[ema50.length-1];
                             
-                            // RELAXED EMA: Short term just needs to be above long term.
                             if (e9 <= e50) continue; 
 
                             const adx = calcADX(highs, lows, closes, 14);
-                            
-                            // RELAXED ADX: Dropped to 20 to allow moderate trends.
                             if (adx < 20) continue; 
 
                             let spread = highs[highs.length-1] - lows[lows.length-1];
@@ -727,12 +739,21 @@
                             
                             const atr = calcATR(highs, lows, closes);
                             
+                            // NEW PROFIT TIER SCALING MATH
                             let dynamicGainTarget = 0.02;
-                            for (let g = state.maxProfitCeiling; g >= 0.02; g -= 0.01) {
-                                if ((atr * 1.5) / currentPrice >= g) {
-                                    dynamicGainTarget = g;
+                            let testGain = state.maxProfitCeiling;
+                            
+                            while (testGain >= 0.02) {
+                                if ((atr * 1.5) / currentPrice >= testGain) {
+                                    dynamicGainTarget = testGain;
                                     break;
                                 }
+                                if (testGain > 0.10) {
+                                    testGain -= 0.05;
+                                } else {
+                                    testGain -= 0.01;
+                                }
+                                testGain = Math.round(testGain * 100) / 100;
                             }
                             
                             let priceTargetDiff = currentPrice * dynamicGainTarget;
