@@ -84,7 +84,6 @@
 </head>
 <body>
 
-    <!-- UI TOAST -->
     <div id="toast-banner">Alert message here</div>
 
     <div id="home" class="page text-center active">
@@ -190,7 +189,8 @@
     <script>
         const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
         const COLOR_PALETTE = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
-        const SCAN_INTERVALS = [30, 15, 10];
+        // Prioritize speed: 10m first, then 15m, then 30m
+        const SCAN_INTERVALS = [10, 15, 30]; 
         let audioCtx = null;
         let toastTimeout = null;
 
@@ -212,8 +212,8 @@
             daysBelow90: 0,
             standbyForMidnight: false,
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 30 },
-            next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 30, equalToNotified: false }
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 },
+            next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false }
         };
 
         let state = JSON.parse(JSON.stringify(defaultState)); 
@@ -493,8 +493,8 @@
             state.tradesToday = 0;
             state.standbyForMidnight = false;
             state.hunt = { strictness: 1.00, intervalIdx: 0 };
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 30 };
-            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 30, equalToNotified: false };
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 };
+            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
             state.engineRunning = false; 
             state.lastTick = Date.now();
             isShifting = false;
@@ -705,6 +705,9 @@
 
                 for(let pair of topTargets) {
                     let baseName = cleanName(pair);
+                    
+                    // STRICT STABLECOIN BLACKLIST
+                    if (['USDT', 'USDC', 'DAI', 'USDTZ', 'USDCZ', 'TUSD', 'USDD'].includes(baseName)) continue;
                     if(seenBases.has(baseName)) continue; 
 
                     try {
@@ -739,7 +742,6 @@
                             
                             const atr = calcATR(highs, lows, closes);
                             
-                            // NEW PROFIT TIER SCALING MATH
                             let dynamicGainTarget = 0.02;
                             let testGain = state.maxProfitCeiling;
                             
@@ -758,6 +760,10 @@
                             
                             let priceTargetDiff = currentPrice * dynamicGainTarget;
                             let blocksNeeded = Math.ceil(priceTargetDiff / (atr || 1));
+                            
+                            // MAXIMUM TIME CAP FILTER (Reject trades taking > 60 minutes)
+                            let totalExpectedMinutes = blocksNeeded * interval;
+                            if (totalExpectedMinutes > 60) continue;
                             
                             let score = 0;
                             if ((currentVolume / (avgVol || 1)) >= (1.5 * strictness)) score += 40; 
@@ -959,8 +965,8 @@
                 log("Proactive Midnight Lockout: Remaining time too short for next cycle. Standing by.");
                 state.standbyForMidnight = true;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 30 };
-                state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 30, equalToNotified: false };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 };
+                state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
                 
                 document.getElementById('lblCountdown').classList.add('standby-alert');
                 document.getElementById('lblCountdown').innerText = "STANDBY";
@@ -978,7 +984,7 @@
                 state.hunt.strictness = 1.00; 
                 state.hunt.intervalIdx = 0;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 30 };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 };
                 
                 document.getElementById('lblNowName').innerText = "Determining...";
                 document.getElementById('lblNowSell').innerText = "0.00";
@@ -1003,7 +1009,7 @@
             state.now.currentPrice = state.next.currentPrice > 0 ? state.next.currentPrice : state.now.buyPrice;
             state.now.peakPrice = state.now.currentPrice; 
             state.now.blocks = state.next.blocks || 1;
-            state.now.interval = state.next.interval || 30;
+            state.now.interval = state.next.interval || 10;
             
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -1119,7 +1125,7 @@
         }
 
         function setTargetTime(blocksNeeded, intervalOverride) {
-            let interval = intervalOverride || 30; 
+            let interval = intervalOverride || 10; 
             let safeBlocks = Math.max(1, Math.min(48, blocksNeeded || 1)); 
             let totalSeconds = safeBlocks * interval * 60; 
             
