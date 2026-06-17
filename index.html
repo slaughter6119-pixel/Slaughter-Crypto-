@@ -26,18 +26,15 @@
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
         .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 150px; cursor: pointer; margin-top: 15px; border-radius: 5px; font-size: 13px; }
         
-        /* Fixed Footer Marquee */
         .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; background: black; padding: 10px 0; border-top: 1px solid #333; z-index: 100; }
         marquee { font-size: 14px; color: white; display: block; width: 100%; }
         
         .money-input { width: 60px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; font-size: 16px; margin-bottom: 15px; }
 
-        /* Results Layout Styling */
         .results-container { width: 100%; max-width: 400px; margin: 0 auto; }
         .flex-row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 10px; }
         .flex-col { display: flex; flex-direction: column; width: 48%; }
         
-        /* Typography */
         .random-color { font-size: 14px; transition: color 0.3s ease; }
         .white-data { color: #FFFFFF; font-size: 14px; font-weight: bold; }
         
@@ -154,11 +151,10 @@
             totalAverage: 0, 
             strictness: 1.0, 
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02 },
-            next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0 }
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.01 },
+            next: { pair: "", buyPrice: 0, expectedGain: 0.01, currentPrice: 0, lowestPrice: 0 }
         };
 
-        // Fully Locked Memory Deep-Merge
         let state = JSON.parse(JSON.stringify(defaultState)); 
         
         try {
@@ -170,7 +166,7 @@
                 state.next = { ...defaultState.next, ...(savedState.next || {}) };
             }
         } catch (e) {
-            console.error("Memory parsing failure. Hard resetting state to protect engine.");
+            console.error("Memory reset executed to preserve state integrity.");
             state = JSON.parse(JSON.stringify(defaultState));
         }
 
@@ -212,12 +208,10 @@
         document.addEventListener("visibilitychange", async () => {
             if (document.visibilityState === "visible" && state.engineRunning) {
                 let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
-                
                 if (secondsOffline > 45) {
-                    log(`App was asleep for ${Math.floor(secondsOffline / 60)} minutes. Syncing historical data...`);
+                    log(`Syncing tracking history...`);
                     await syncOfflineHistory();
                 }
-                
                 updateLivePricesAndAccuracy();
             }
         });
@@ -229,7 +223,6 @@
             try {
                 let sinceUnix = Math.floor(state.lastTick / 1000) - 60; 
                 
-                // 1. Fetch History for the "NOW" coin individually
                 if (state.now.pair) {
                     try {
                         const resNow = await fetch(`${KRAKEN_PROXY}OHLC?pair=${state.now.pair}&interval=1&since=${sinceUnix}`);
@@ -243,21 +236,17 @@
                                 let candles = jsonNow.result[nowKey];
                                 let highestFound = state.now.peakPrice;
                                 for (let c of candles) {
-                                    let high = parseFloat(c[2]); // High price
+                                    let high = parseFloat(c[2]);
                                     if (high > highestFound) highestFound = high;
                                 }
                                 if (highestFound > state.now.peakPrice) {
                                     state.now.peakPrice = highestFound;
-                                    log(`Offline peak locked: ${formatPrice(highestFound)}`);
                                 }
                             }
                         }
-                    } catch (e) {
-                        log("Now history partial sync failed.");
-                    }
+                    } catch (e) {}
                 }
 
-                // 2. Fetch History for the "NEXT" coin individually
                 if (state.next.pair) {
                     try {
                         const resNext = await fetch(`${KRAKEN_PROXY}OHLC?pair=${state.next.pair}&interval=1&since=${sinceUnix}`);
@@ -271,7 +260,7 @@
                                 let candles = jsonNext.result[nextKey];
                                 let lowestFound = state.next.lowestPrice;
                                 for (let c of candles) {
-                                    let low = parseFloat(c[3]); // Low price
+                                    let low = parseFloat(c[3]);
                                     if (lowestFound === 0 || low < lowestFound) lowestFound = low;
                                 }
                                 if (state.next.lowestPrice === 0 || lowestFound < state.next.lowestPrice) {
@@ -279,15 +268,11 @@
                                 }
                             }
                         }
-                    } catch (e) {
-                        log("Next history partial sync failed.");
-                    }
+                    } catch (e) {}
                 }
                 
                 saveState();
-            } catch(e) {
-                log("Historical sync experienced a connection error.");
-            }
+            } catch(e) {}
             
             isSyncingHistory = false;
         }
@@ -295,9 +280,7 @@
         function saveState() {
             try {
                 localStorage.setItem('slaughterState', JSON.stringify(state));
-            } catch(e) {
-                console.error("Could not save to cache.");
-            }
+            } catch(e) {}
         }
 
         function randomizeColors() {
@@ -326,7 +309,7 @@
 
         function updateExpectedProfitDisplay() {
             let activeInvestment = state.investment === 0 ? 10.00 : state.investment;
-            let gain = (state.now && state.now.expectedGain) ? state.now.expectedGain : 0.02;
+            let gain = (state.now && state.now.expectedGain) ? state.now.expectedGain : 0.01;
             let profit = activeInvestment * gain;
             document.getElementById('lblProfit').innerText = profit.toFixed(2);
         }
@@ -336,16 +319,9 @@
             
             if (valInput === "") {
                 state.investment = 10.00;
-                log(`No input detected. Defaulting investment to $10.00.`);
             } else {
                 let parsed = parseFloat(valInput);
-                if (!isNaN(parsed)) {
-                    state.investment = parsed;
-                    log(`Investment amount updated to $${state.investment.toFixed(2)}.`);
-                } else {
-                    state.investment = 10.00; 
-                    log(`Invalid input. Defaulting investment to $10.00.`);
-                }
+                state.investment = !isNaN(parsed) ? parsed : 10.00;
             }
             
             saveState();
@@ -362,11 +338,7 @@
         function goToResults() {
             showPage('results');
             randomizeColors(); 
-            
-            if(state.engineRunning) {
-                executeFullReset();
-            }
-            
+            if(state.engineRunning) executeFullReset();
             startEngine();
         }
 
@@ -380,8 +352,8 @@
             
             state.todayAverage = 0;
             state.tradesToday = 0;
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02 };
-            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0 };
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.01 };
+            state.next = { pair: "", buyPrice: 0, expectedGain: 0.01, currentPrice: 0, lowestPrice: 0 };
             state.engineRunning = false; 
             state.lastTick = Date.now();
             
@@ -398,14 +370,13 @@
             document.getElementById('lblNextBuy').innerText = "0.00";
             document.getElementById('lblNextCurrent').innerText = "0.00";
             
-            log("Engine data fully reset. Waiting for fresh startup...");
+            log("Engine data reset. Ready for clean sweep.");
             saveState();
         }
 
         function pauseAndGoToHome() {
             if(livePriceInterval) clearInterval(livePriceInterval);
-            
-            log("Chain paused. Returning to Home. Adjust Profit / Start fresh.");
+            log("Analysis paused. Standing by on Home.");
             showPage('home');
         }
 
@@ -428,7 +399,7 @@
             if(state.investment === 0) state.investment = 10.00;
             
             saveState();
-            log(`Initializing AI Math Engine. Current Strictness: ${state.strictness.toFixed(2)}x`);
+            log(`Initializing AI Math Engine. Strictness baseline: ${state.strictness.toFixed(2)}x`);
             
             midnightCheckInterval = setInterval(checkDailyReset, 60000); 
             
@@ -441,8 +412,7 @@
         }
 
         async function resumeEngine() {
-            log("Session restored. Tracking active timeline...");
-            
+            log("Tracking live technical metrics...");
             let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
             if (secondsOffline > 45) {
                 await syncOfflineHistory();
@@ -465,7 +435,6 @@
                 
                 state.daysRun++;
                 state.lastDate = currentDate;
-                
                 state.tradesToday = 0;
                 state.todayAverage = 0;
                 state.investment = 0;
@@ -474,7 +443,7 @@
                 document.getElementById('lblAccToday').innerText = "0";
                 document.getElementById('lblProfit').innerText = "0.00";
                 
-                log("Date change detected. Averages calculated. Daily metrics reset.");
+                log("Daily logs calculated and cleared.");
                 saveState();
             }
         }
@@ -531,35 +500,28 @@
 
         async function fetchMarketScores() {
             try {
-                // 1. MASTER RADAR SWEEP: Get ALL pairs in one hit
                 const tickerRes = await fetch(`${KRAKEN_PROXY}Ticker`);
                 const tickerJson = await tickerRes.json();
                 if(tickerJson.error && tickerJson.error.length > 0) return [];
 
                 const allPairs = Object.keys(tickerJson.result);
-                
-                // 2. Filter for actual volume/activity (stripping out dead coins)
                 let activeCoins = [];
                 for (let pair of allPairs) {
                     if (pair.endsWith("USD") || pair.endsWith("USDT")) {
                         let data = tickerJson.result[pair];
-                        let trades24h = parseInt(data.t[1]); // Number of trades in 24 hours
-                        
-                        // Must have significant live activity to be considered
+                        let trades24h = parseInt(data.t[1]);
                         if (trades24h > 1500) { 
                             activeCoins.push({ pair: pair, trades: trades24h });
                         }
                     }
                 }
 
-                // 3. Sort by highest trading volume and isolate the Top 10 Alphas
                 activeCoins.sort((a, b) => b.trades - a.trades);
                 const topTargets = activeCoins.slice(0, 10).map(c => c.pair);
 
                 let marketScores = [];
                 let seenBases = new Set(); 
 
-                // 4. Run the deep math ONLY on the heavy hitters
                 for(let pair of topTargets) {
                     let baseName = cleanName(pair);
                     if(seenBases.has(baseName)) continue; 
@@ -587,19 +549,16 @@
                             const rsi = calcRSI(closes, 14);
                             const avgVol = calcSMA(volumes, 14); 
                             
-                            let predictedGain = (atr * 2) / currentPrice; 
-                            predictedGain = Math.max(0.02, predictedGain); 
+                            // True volatility scale: base target entirely on ATR movement profile
+                            let predictedGain = (atr * 1.5) / currentPrice; 
+                            predictedGain = Math.max(0.005, Math.min(0.04, predictedGain)); 
                             
                             let score = 0;
-
                             let volumeTarget = 1.5 * state.strictness;
                             if ((currentVolume / (avgVol || 1)) >= volumeTarget) score += 40; 
-                            
                             if (macdData.macdLine > macdData.signalLine) score += 30; 
-                            
                             if (currentPrice <= bb.sma && currentPrice >= (bb.lower * 0.99)) score += 30;
                             if (currentPrice > bb.upper) score -= 50; 
-                            
                             if (rsi < 40) score += 20;
 
                             seenBases.add(baseName); 
@@ -610,13 +569,12 @@
                 marketScores.sort((a, b) => b.score - a.score);
                 return marketScores;
             } catch(e) {
-                log("Scanner error: " + e.message);
                 return [];
             }
         }
 
         async function initialPopulateChain() {
-            log("Running Global Radar Sweep...");
+            log("Executing alpha sweep...");
             const scores = await fetchMarketScores();
             if(scores.length >= 2) {
                 state.now.pair = scores[0].pair;
@@ -633,7 +591,7 @@
 
                 state.next.pair = scores[1].pair;
                 state.next.expectedGain = scores[1].expectedGain;
-                state.next.buyPrice = scores[1].price * 0.985; 
+                state.next.buyPrice = scores[1].price; // Zero artificial entry discount
                 state.next.lowestPrice = scores[1].price; 
                 state.next.currentPrice = scores[1].price;
 
@@ -648,11 +606,10 @@
         }
 
         async function triggerChainShift() {
-            log("Executing chain shift and analyzing trade accuracy...");
+            log("Analyzing trade execution window...");
             
             let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
             if (secondsOffline > 45) {
-                log("Woke up past target time. Syncing history before calculating accuracy...");
                 await syncOfflineHistory();
             } else {
                 try {
@@ -677,9 +634,7 @@
                             }
                         }
                     }
-                } catch(e) {
-                    log("Final price sync failed. Using last known data.");
-                }
+                } catch(e) {}
             }
             
             let targetDiff = state.now.sellTarget - state.now.buyPrice;
@@ -719,19 +674,13 @@
             document.getElementById('lblAccPrice').innerText = "0";
             document.getElementById('lblAccTimeline').innerText = "0";
 
-            let shiftedBuyPrice = state.next.buyPrice;
-            if (state.next.lowestPrice > state.next.buyPrice && state.next.currentPrice > 0) {
-                shiftedBuyPrice = state.next.currentPrice;
-                log(`Next target buy price not reached. Adjusting Now buy price to live market value.`);
-            }
-
+            // Shift Next into Now using its clean live price anchor
             state.now.pair = state.next.pair;
             state.now.expectedGain = state.next.expectedGain;
-            state.now.buyPrice = shiftedBuyPrice; 
+            state.now.buyPrice = state.next.currentPrice > 0 ? state.next.currentPrice : state.next.buyPrice; 
             state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
-            
-            state.now.currentPrice = state.next.currentPrice || shiftedBuyPrice;
-            state.now.peakPrice = state.now.currentPrice; 
+            state.now.currentPrice = state.now.buyPrice;
+            state.now.peakPrice = state.now.buyPrice; 
             
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -748,7 +697,7 @@
             if(newNext) {
                 state.next.pair = newNext.pair;
                 state.next.expectedGain = newNext.expectedGain;
-                state.next.buyPrice = newNext.price * 0.985; 
+                state.next.buyPrice = newNext.price; // Clean, non-discounted structural entry
                 state.next.lowestPrice = newNext.price; 
                 state.next.currentPrice = newNext.price;
                 
@@ -771,19 +720,15 @@
                 
                 if(json.result) {
                     const keys = Object.keys(json.result);
-                    
                     let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
                     let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','').replace('USD','')));
                     
                     if(nowKey) {
                         let nowCurrent = parseFloat(json.result[nowKey].c[0]);
                         state.now.currentPrice = nowCurrent;
-                        
                         document.getElementById('lblNowCurrent').innerText = formatPrice(nowCurrent);
                         
-                        if(nowCurrent > state.now.peakPrice) {
-                            state.now.peakPrice = nowCurrent;
-                        }
+                        if(nowCurrent > state.now.peakPrice) state.now.peakPrice = nowCurrent;
 
                         let targetDiff = state.now.sellTarget - state.now.buyPrice;
                         if (targetDiff <= 0) targetDiff = 0.000001;
@@ -800,11 +745,9 @@
                     if(nextKey) {
                         let nextCurrent = parseFloat(json.result[nextKey].c[0]);
                         state.next.currentPrice = nextCurrent;
-                        
                         if (state.next.lowestPrice === 0 || nextCurrent < state.next.lowestPrice) {
                             state.next.lowestPrice = nextCurrent;
                         }
-                        
                         document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
                     }
                     
@@ -820,13 +763,11 @@
             
             state.targetSellTime = Date.now() + (totalSeconds * 1000);
             saveState();
-            
             startCountdownVisuals();
         }
 
         function startCountdownVisuals() {
             if(timerInterval) clearInterval(timerInterval);
-            
             updateTimerDisplay();
 
             timerInterval = setInterval(() => {
@@ -842,10 +783,7 @@
             let diffMs = state.targetSellTime - Date.now();
             if(diffMs <= 0) {
                 document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
-                
-                if (document.visibilityState === "hidden") {
-                    if (timerInterval) clearInterval(timerInterval);
-                }
+                if (document.visibilityState === "hidden" && timerInterval) clearInterval(timerInterval);
                 return;
             }
             let diffSecs = Math.floor(diffMs / 1000);
