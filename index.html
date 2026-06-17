@@ -917,4 +917,101 @@
 
                         let activeInvestment = state.investment === 0 ? 10.00 : state.investment;
                         if (state.now.buyPrice > 0) {
-                            let currentProfit = activeInvestment * ((nowCurrent -
+                            let currentProfit = activeInvestment * ((nowCurrent - state.now.buyPrice) / state.now.buyPrice);
+                            if (currentProfit >= 0.02) {
+                                timelineEl.classList.add('profit-pulse');
+                            } else {
+                                timelineEl.classList.remove('profit-pulse');
+                            }
+                        } else {
+                            timelineEl.classList.remove('profit-pulse');
+                        }
+                    }
+                    
+                    if(nextKey) {
+                        let nextCurrent = parseFloat(json.result[nextKey].c[0]);
+                        state.next.currentPrice = nextCurrent;
+                        if (state.next.lowestPrice === 0 || nextCurrent < state.next.lowestPrice) state.next.lowestPrice = nextCurrent;
+                        
+                        document.getElementById('lblNextCurrent').innerText = formatPrice(nextCurrent);
+
+                        if (nextCurrent <= state.next.buyPrice && !state.next.equalToNotified) {
+                            state.next.equalToNotified = true;
+                            triggerAlarm(state.next.pair, nextCurrent, false, true);
+                        }
+
+                        let threshold = state.next.buyPrice * 0.98;
+                        if (nextCurrent <= threshold) {
+                            state.next.buyPrice = nextCurrent;
+                            document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
+                            triggerAlarm(state.next.pair, nextCurrent, true, false);
+                        }
+                    }
+                    
+                    state.lastTick = Date.now();
+                    saveState();
+
+                    if (state.now.currentPrice >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
+                        log("Profit target hit early! Executing immediate cash-out...");
+                        triggerAlarm(state.now.pair, state.now.currentPrice);
+                        
+                        if (timerInterval) clearInterval(timerInterval);
+                        isShifting = true;
+                        triggerChainShift().finally(() => { isShifting = false; });
+                        return; 
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function setTargetTime(blocksNeeded) {
+            let safeBlocks = Math.max(1, Math.min(48, blocksNeeded || 1)); 
+            let totalSeconds = safeBlocks * 30 * 60; 
+            
+            let projectedEnd = Date.now() + (totalSeconds * 1000);
+            let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
+            
+            if ((totalSeconds * 1000) >= msToMidnight) {
+                state.standbyForMidnight = true;
+                log("Trade lockout: Projected time crosses midnight. Engine standing by for reset.");
+                document.getElementById('lblCountdown').classList.add('standby-alert');
+                document.getElementById('lblCountdown').innerText = "STANDBY";
+            } else {
+                state.targetSellTime = projectedEnd;
+                document.getElementById('lblCountdown').classList.remove('standby-alert');
+                startCountdownVisuals();
+            }
+            saveState();
+        }
+
+        function startCountdownVisuals() {
+            if(timerInterval) clearInterval(timerInterval);
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                if (state.standbyForMidnight) return;
+                updateTimerDisplay();
+                if(Date.now() >= state.targetSellTime && document.visibilityState === "visible" && !isShifting) {
+                    clearInterval(timerInterval);
+                    isShifting = true;
+                    triggerChainShift().finally(() => { isShifting = false; });
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            let diffMs = state.targetSellTime - Date.now();
+            if(diffMs <= 0) {
+                document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
+                if (document.visibilityState === "hidden" && timerInterval) clearInterval(timerInterval);
+                return;
+            }
+            let diffSecs = Math.floor(diffMs / 1000);
+            let hrs = Math.floor(diffSecs / 3600);
+            let mins = Math.floor((diffSecs % 3600) / 60);
+            let secs = diffSecs % 60;
+            document.getElementById('lblCountdown').innerText = `${hrs.toString().padStart(2, '0')}hr ${mins.toString().padStart(2, '0')}min ${secs.toString().padStart(2, '0')}sec`;
+        }
+    </script>
+</body>
+</html>
