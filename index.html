@@ -382,11 +382,25 @@
                         const keys = Object.keys(jsonNow.result).filter(k => k !== 'last');
                         if (keys[0] && jsonNow.result[keys[0]]) {
                             let highestFound = state.now.peakPrice;
+                            let lowestFoundNow = state.now.buyPrice;
                             for (let c of jsonNow.result[keys[0]]) {
                                 let high = parseFloat(c[2]);
+                                let low = parseFloat(c[3]);
                                 if (high > highestFound) highestFound = high;
+                                if (low < lowestFoundNow) lowestFoundNow = low;
                             }
                             if (highestFound > state.now.peakPrice) state.now.peakPrice = highestFound;
+                            
+                            let nowThreshold = state.now.buyPrice * 0.98;
+                            if (lowestFoundNow <= nowThreshold) {
+                                state.now.buyPrice = lowestFoundNow;
+                                state.now.sellTarget = lowestFoundNow * (1 + state.now.expectedGain);
+                                triggerAlarm('DIP', state.now.pair, lowestFoundNow);
+                                
+                                let nowSellUI = document.getElementById('lblNowSell');
+                                if (nowSellUI) nowSellUI.innerText = formatPrice(state.now.sellTarget);
+                                updateExpectedProfitDisplay();
+                            }
                         }
                     }
                 }
@@ -414,7 +428,6 @@
                                 state.next.originalSellTarget = lowestFound * (1 + state.next.expectedGain);
                                 triggerAlarm('DIP', state.next.pair, lowestFound);
                                 
-                                // FORCE UI UPDATE DURING BACKGROUND SYNC
                                 let nextBuyUI = document.getElementById('lblNextBuy');
                                 if (nextBuyUI) nextBuyUI.innerText = formatPrice(state.next.buyPrice);
                             }
@@ -695,6 +708,29 @@
             let adx = smooth(dx, period);
             return adx[adx.length-1] || 0;
         }
+        
+        // NEW: Wilder's Smoothed RSI for momentum calculation
+        function calcRSI(closes, period=14) {
+            if (closes.length <= period) return 50;
+            let gains = 0, losses = 0;
+            for (let i = 1; i <= period; i++) {
+                let diff = closes[i] - closes[i - 1];
+                if (diff > 0) gains += diff;
+                else losses -= diff;
+            }
+            let avgGain = gains / period;
+            let avgLoss = losses / period;
+            for (let i = period + 1; i < closes.length; i++) {
+                let diff = closes[i] - closes[i - 1];
+                let gain = diff > 0 ? diff : 0;
+                let loss = diff < 0 ? -diff : 0;
+                avgGain = ((avgGain * (period - 1)) + gain) / period;
+                avgLoss = ((avgLoss * (period - 1)) + loss) / period;
+            }
+            if (avgLoss === 0) return 100;
+            let rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
+        }
 
         async function fetchMarketScores(interval, strictness) {
             try {
@@ -746,7 +782,10 @@
                             const ema9 = calcEMA(closes, 9), ema21 = calcEMA(closes, 21), ema50 = calcEMA(closes, 50);
                             let e9 = ema9[ema9.length-1], e21 = ema21[ema21.length-1], e50 = ema50[ema50.length-1];
                             
-                            if (e9 <= e50) continue; 
+                            // NEW: STRICT DIRECTIONAL FILTER (Bullish Alignment & RSI)
+                            if (e9 <= e21 || e21 <= e50) continue; 
+                            const rsi = calcRSI(closes, 14);
+                            if (rsi < 52) continue;
 
                             const adx = calcADX(highs, lows, closes, 14);
                             if (adx < 20) continue; 
@@ -1100,6 +1139,17 @@
                             } else {
                                 timelineEl.classList.remove('profit-pulse');
                                 profitNowWrapper.classList.remove('profit-pulse');
+                            }
+
+                            // NEW: ACTIVE NOW COLUMN DIP TRAILING
+                            let nowThreshold = state.now.buyPrice * 0.98;
+                            if (nowCurrent <= nowThreshold) {
+                                state.now.buyPrice = nowCurrent;
+                                state.now.sellTarget = nowCurrent * (1 + state.now.expectedGain);
+                                document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
+                                updateExpectedProfitDisplay();
+                                triggerAlarm('DIP', state.now.pair, nowCurrent);
+                                saveState();
                             }
 
                             if (!state.now.halfwayHit && nowCurrent >= state.now.buyPrice + (targetDiff * 0.5)) {
