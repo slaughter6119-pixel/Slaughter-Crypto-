@@ -57,7 +57,6 @@
             color: #00FF00 !important;
         }
 
-        /* IN-APP TOAST NOTIFICATION */
         #toast-banner {
             position: fixed;
             top: -100px;
@@ -189,7 +188,6 @@
     <script>
         const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
         const COLOR_PALETTE = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
-        // Prioritize speed: 10m first, then 15m, then 30m
         const SCAN_INTERVALS = [10, 15, 30]; 
         let audioCtx = null;
         let toastTimeout = null;
@@ -212,7 +210,7 @@
             daysBelow90: 0,
             standbyForMidnight: false,
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 },
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false },
             next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false }
         };
 
@@ -287,11 +285,16 @@
                 msg = `Price dropped 2%. New floor for ${coin} at $${formatPrice(price)}.`;
             } else if (type === 'LOCKED') {
                 msg = `New target acquired: ${coin}. Scanning strictness reset to 1.00x.`;
+            } else if (type === 'HALF_HIT') {
+                msg = `50% profit reached! Stop-loss for ${coin} moved to Break-Even.`;
+            } else if (type === 'MOMENTUM') {
+                msg = `Momentum Multiplier! ${coin} target raised by 1% and timer extended.`;
+            } else if (type === 'BREAK_EVEN') {
+                msg = `Trailing Stop Triggered! ${coin} sold at Break-Even to protect capital.`;
             }
 
             log(`ALARM: ${msg}`);
             
-            // In-app visual Toast overlay
             const toast = document.getElementById('toast-banner');
             toast.innerText = msg;
             toast.classList.add('show');
@@ -493,7 +496,7 @@
             state.tradesToday = 0;
             state.standbyForMidnight = false;
             state.hunt = { strictness: 1.00, intervalIdx: 0 };
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 };
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
             state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
             state.engineRunning = false; 
             state.lastTick = Date.now();
@@ -706,7 +709,6 @@
                 for(let pair of topTargets) {
                     let baseName = cleanName(pair);
                     
-                    // STRICT STABLECOIN BLACKLIST
                     if (['USDT', 'USDC', 'DAI', 'USDTZ', 'USDCZ', 'TUSD', 'USDD'].includes(baseName)) continue;
                     if(seenBases.has(baseName)) continue; 
 
@@ -761,7 +763,6 @@
                             let priceTargetDiff = currentPrice * dynamicGainTarget;
                             let blocksNeeded = Math.ceil(priceTargetDiff / (atr || 1));
                             
-                            // MAXIMUM TIME CAP FILTER (Reject trades taking > 60 minutes)
                             let totalExpectedMinutes = blocksNeeded * interval;
                             if (totalExpectedMinutes > 60) continue;
                             
@@ -806,6 +807,8 @@
                 state.now.currentPrice = scores[0].price;
                 state.now.blocks = scores[0].blocks;
                 state.now.interval = interval;
+                state.now.tradeStartTime = Date.now();
+                state.now.halfwayHit = false;
 
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -938,8 +941,6 @@
             finalPriceAcc = Math.round(finalPriceAcc || 0);
             finalTimelineAcc = Math.round(finalTimelineAcc || 0);
 
-            if (finalPriceAcc >= 100) triggerAlarm('SELL', state.now.pair, state.now.currentPrice);
-
             let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
             log("Trade completed. Accuracies logged.");
 
@@ -965,7 +966,7 @@
                 log("Proactive Midnight Lockout: Remaining time too short for next cycle. Standing by.");
                 state.standbyForMidnight = true;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
                 state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
                 
                 document.getElementById('lblCountdown').classList.add('standby-alert');
@@ -984,7 +985,7 @@
                 state.hunt.strictness = 1.00; 
                 state.hunt.intervalIdx = 0;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10 };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
                 
                 document.getElementById('lblNowName').innerText = "Determining...";
                 document.getElementById('lblNowSell').innerText = "0.00";
@@ -1010,6 +1011,8 @@
             state.now.peakPrice = state.now.currentPrice; 
             state.now.blocks = state.next.blocks || 1;
             state.now.interval = state.next.interval || 10;
+            state.now.tradeStartTime = Date.now();
+            state.now.halfwayHit = false;
             
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -1078,6 +1081,51 @@
                                 timelineEl.classList.remove('profit-pulse');
                                 profitNowWrapper.classList.remove('profit-pulse');
                             }
+
+                            // STRATEGY 1: Break-Even Trailing Stop
+                            if (!state.now.halfwayHit && nowCurrent >= state.now.buyPrice + (targetDiff * 0.5)) {
+                                state.now.halfwayHit = true;
+                                triggerAlarm('HALF_HIT', state.now.pair, nowCurrent);
+                                log(`50% profit margin reached. Break-even stop locked at $${formatPrice(state.now.buyPrice)}.`);
+                                saveState();
+                            }
+
+                            if (state.now.halfwayHit && nowCurrent <= state.now.buyPrice && state.engineRunning && !isShifting && !isSyncingHistory) {
+                                log("Price dropped to entry. Executing break-even trailing stop!");
+                                triggerAlarm('BREAK_EVEN', state.now.pair, nowCurrent);
+                                if (timerInterval) clearInterval(timerInterval);
+                                isShifting = true;
+                                triggerChainShift().finally(() => { isShifting = false; });
+                                return;
+                            }
+
+                            // STRATEGY 2: Momentum Multiplier & Safe Sell
+                            if (nowCurrent >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
+                                let elapsedMs = Date.now() - (state.now.tradeStartTime || Date.now() - 300000);
+                                
+                                if (elapsedMs < 5 * 60 * 1000) {
+                                    state.now.expectedGain += 0.01;
+                                    state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
+                                    state.targetSellTime += 5 * 60 * 1000; 
+                                    state.now.halfwayHit = false; 
+                                    
+                                    document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
+                                    updateExpectedProfitDisplay();
+                                    
+                                    triggerAlarm('MOMENTUM', state.now.pair, nowCurrent);
+                                    log(`Momentum Multiplier engaged! Target raised to $${formatPrice(state.now.sellTarget)}.`);
+                                    startCountdownVisuals(); 
+                                    saveState();
+                                    return;
+                                } else {
+                                    log("Profit target hit! Executing immediate cash-out...");
+                                    triggerAlarm('SELL', state.now.pair, nowCurrent);
+                                    if (timerInterval) clearInterval(timerInterval);
+                                    isShifting = true;
+                                    triggerChainShift().finally(() => { isShifting = false; });
+                                    return; 
+                                }
+                            }
                         } else {
                             profitNowEl.innerText = "0.00";
                             timelineEl.classList.remove('profit-pulse');
@@ -1111,14 +1159,13 @@
                     state.lastTick = Date.now();
                     saveState();
 
-                    if (state.now.currentPrice >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
-                        log("Profit target hit early! Executing immediate cash-out...");
-                        triggerAlarm('SELL', state.now.pair, state.now.currentPrice);
-                        
+                    // SAFETY CATCH: Force shift if timer expires (bypasses visual UI sleep bugs)
+                    if (Date.now() >= state.targetSellTime && state.targetSellTime > 0 && state.engineRunning && !isShifting && !isSyncingHistory && state.now.pair) {
+                        log("Trade timeline expired. Executing shift...");
                         if (timerInterval) clearInterval(timerInterval);
                         isShifting = true;
                         triggerChainShift().finally(() => { isShifting = false; });
-                        return; 
+                        return;
                     }
                 }
             } catch(e) {}
@@ -1164,7 +1211,6 @@
             let diffMs = state.targetSellTime - Date.now();
             if(diffMs <= 0) {
                 document.getElementById('lblCountdown').innerText = `00hr 00min 00sec`;
-                if (document.visibilityState === "hidden" && timerInterval) clearInterval(timerInterval);
                 return;
             }
             let diffSecs = Math.floor(diffMs / 1000);
