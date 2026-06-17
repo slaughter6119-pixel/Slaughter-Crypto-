@@ -83,13 +83,22 @@
             
             <div class="header-pink" style="font-weight: normal;"><u>Results</u></div>
             
-            <div class="flex-row" style="margin-bottom: 10px;">
-                <span><span class="random-color">Countdown to sell-</span> <br><span class="white-data" id="lblCountdown">00hr 00min 00sec</span></span>
-                <span><span class="random-color">Profit expected-</span> <br><span class="white-data">$<span id="lblProfit">0.00</span></span></span>
+            <div class="flex-row" style="margin-bottom: 15px;">
+                <div style="width: 50%; text-align: left;">
+                    <span class="random-color">Countdown to sell-</span> <br><span class="white-data" id="lblCountdown">00hr 00min 00sec</span>
+                </div>
+                <div style="width: 50%; text-align: right;">
+                    <span class="random-color">Profit expected-</span> <br><span class="white-data">$<span id="lblProfit">0.00</span></span>
+                </div>
             </div>
 
-            <div style="text-align: center; margin-bottom: 20px;">
-                <span class="random-color">Transactions today-</span> <span class="white-data" id="lblTradesToday">0</span>
+            <div class="flex-row" style="margin-bottom: 20px;">
+                <div style="width: 50%; text-align: left;">
+                    <span class="random-color">Transactions today-</span> <br><span class="white-data" id="lblTradesToday">0</span>
+                </div>
+                <div style="width: 50%; text-align: right;">
+                    <span class="random-color">Profit now-</span> <br><span class="white-data" id="profitNowWrapper">$<span id="lblProfitNow">0.00</span></span>
+                </div>
             </div>
 
             <div class="header-currency" style="font-weight: normal;"><u>Currency</u></div>
@@ -430,6 +439,8 @@
             document.getElementById('lblAccTimeline').innerText = "0";
             document.getElementById('lblCountdown').innerText = "00hr 00min 00sec";
             document.getElementById('lblTradesToday').innerText = "0";
+            document.getElementById('lblProfitNow').innerText = "0.00";
+            document.getElementById('profitNowWrapper').classList.remove('profit-pulse');
             
             document.getElementById('lblNowName').innerText = "Determining...";
             document.getElementById('lblNowSell').innerText = "0.00";
@@ -551,6 +562,8 @@
                 document.getElementById('lblAccToday').innerText = "0";
                 document.getElementById('lblProfit').innerText = "0.00";
                 document.getElementById('lblTradesToday').innerText = "0";
+                document.getElementById('lblProfitNow').innerText = "0.00";
+                document.getElementById('profitNowWrapper').classList.remove('profit-pulse');
                 
                 log("Daily logs calculated. Midnight lockout lifted.");
                 
@@ -777,8 +790,8 @@
                     const json = await res.json();
                     if(json.result) {
                         const keys = Object.keys(json.result);
-                        let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','replace','USD','')));
-                        let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','replace','USD','')));
+                        let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
+                        let nextKey = keys.find(k => k.includes(state.next.pair.replace('USDT','').replace('USD','')));
                         
                         if(nowKey) {
                             let finalCurrent = parseFloat(json.result[nowKey].c[0]);
@@ -916,15 +929,25 @@
                         timelineEl.innerText = Math.round(displayTimeAcc);
 
                         let activeInvestment = state.investment === 0 ? 10.00 : state.investment;
+                        let profitNowEl = document.getElementById('lblProfitNow');
+                        let profitNowWrapper = document.getElementById('profitNowWrapper');
+
                         if (state.now.buyPrice > 0) {
                             let currentProfit = activeInvestment * ((nowCurrent - state.now.buyPrice) / state.now.buyPrice);
+                            
+                            profitNowEl.innerText = currentProfit.toFixed(2);
+
                             if (currentProfit >= 0.02) {
                                 timelineEl.classList.add('profit-pulse');
+                                profitNowWrapper.classList.add('profit-pulse');
                             } else {
                                 timelineEl.classList.remove('profit-pulse');
+                                profitNowWrapper.classList.remove('profit-pulse');
                             }
                         } else {
+                            profitNowEl.innerText = "0.00";
                             timelineEl.classList.remove('profit-pulse');
+                            profitNowWrapper.classList.remove('profit-pulse');
                         }
                     }
                     
