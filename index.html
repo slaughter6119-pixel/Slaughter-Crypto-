@@ -209,6 +209,7 @@
             maxProfitCeiling: 1.00,
             daysBelow90: 0,
             standbyForMidnight: false,
+            cooldowns: {},
 
             now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false },
             next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false }
@@ -223,6 +224,7 @@
                 state = { ...state, ...savedState };
                 state.now = { ...defaultState.now, ...(savedState.now || {}) };
                 state.next = { ...defaultState.next, ...(savedState.next || {}) };
+                state.cooldowns = { ...defaultState.cooldowns, ...(savedState.cooldowns || {}) };
                 if (!state.hunt) state.hunt = { strictness: 1.00, intervalIdx: 0 };
             }
         } catch (e) {
@@ -291,6 +293,8 @@
                 msg = `Momentum Multiplier! ${coin} target raised by 1% and timer extended.`;
             } else if (type === 'BREAK_EVEN') {
                 msg = `Trailing Stop Triggered! ${coin} sold at Break-Even to protect capital.`;
+            } else if (type === 'BLEED') {
+                msg = `Bleed detected. ${coin} added to 60-minute Penalty Box.`;
             }
 
             log(`ALARM: ${msg}`);
@@ -407,7 +411,12 @@
 
                             if (lowestFound <= state.next.buyPrice * 0.98) {
                                 state.next.buyPrice = lowestFound;
+                                state.next.originalSellTarget = lowestFound * (1 + state.next.expectedGain);
                                 triggerAlarm('DIP', state.next.pair, lowestFound);
+                                
+                                // FORCE UI UPDATE DURING BACKGROUND SYNC
+                                let nextBuyUI = document.getElementById('lblNextBuy');
+                                if (nextBuyUI) nextBuyUI.innerText = formatPrice(state.next.buyPrice);
                             }
                         }
                     }
@@ -712,6 +721,10 @@
                     if (['USDT', 'USDC', 'DAI', 'USDTZ', 'USDCZ', 'TUSD', 'USDD'].includes(baseName)) continue;
                     if(seenBases.has(baseName)) continue; 
 
+                    if (state.cooldowns && state.cooldowns[baseName] && Date.now() < state.cooldowns[baseName]) {
+                        continue; 
+                    }
+
                     try {
                         const r = await fetch(`${KRAKEN_PROXY}OHLC?pair=${pair}&interval=${interval}`);
                         const j = await r.json();
@@ -941,6 +954,11 @@
             finalPriceAcc = Math.round(finalPriceAcc || 0);
             finalTimelineAcc = Math.round(finalTimelineAcc || 0);
 
+            if (finalPriceAcc < 0) {
+                triggerAlarm('BLEED', state.now.pair, state.now.currentPrice);
+                state.cooldowns[cleanName(state.now.pair)] = Date.now() + (60 * 60 * 1000); 
+            }
+
             let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
             log("Trade completed. Accuracies logged.");
 
@@ -980,8 +998,8 @@
                 return;
             }
 
-            if (!state.next.pair) {
-                log("Chain broken: No Next target secured. Halting timer and resetting hunt...");
+            if (!state.next.pair || (state.cooldowns[cleanName(state.next.pair)] && Date.now() < state.cooldowns[cleanName(state.next.pair)])) {
+                log("Chain broken or Next coin blacklisted. Halting timer and resetting hunt...");
                 state.hunt.strictness = 1.00; 
                 state.hunt.intervalIdx = 0;
                 
@@ -1003,12 +1021,14 @@
                 return;
             }
 
+            let trueCurrent = state.next.currentPrice > 0 ? state.next.currentPrice : state.next.buyPrice;
+
             state.now.pair = state.next.pair;
             state.now.expectedGain = state.next.expectedGain;
-            state.now.buyPrice = state.next.buyPrice; 
-            state.now.sellTarget = state.next.originalSellTarget; 
-            state.now.currentPrice = state.next.currentPrice > 0 ? state.next.currentPrice : state.now.buyPrice;
-            state.now.peakPrice = state.now.currentPrice; 
+            state.now.buyPrice = trueCurrent; 
+            state.now.sellTarget = trueCurrent * (1 + state.next.expectedGain); 
+            state.now.currentPrice = trueCurrent;
+            state.now.peakPrice = trueCurrent; 
             state.now.blocks = state.next.blocks || 1;
             state.now.interval = state.next.interval || 10;
             state.now.tradeStartTime = Date.now();
@@ -1082,7 +1102,6 @@
                                 profitNowWrapper.classList.remove('profit-pulse');
                             }
 
-                            // STRATEGY 1: Break-Even Trailing Stop
                             if (!state.now.halfwayHit && nowCurrent >= state.now.buyPrice + (targetDiff * 0.5)) {
                                 state.now.halfwayHit = true;
                                 triggerAlarm('HALF_HIT', state.now.pair, nowCurrent);
@@ -1099,7 +1118,6 @@
                                 return;
                             }
 
-                            // STRATEGY 2: Momentum Multiplier & Safe Sell
                             if (nowCurrent >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
                                 let elapsedMs = Date.now() - (state.now.tradeStartTime || Date.now() - 300000);
                                 
@@ -1150,6 +1168,7 @@
                             let threshold = state.next.buyPrice * 0.98;
                             if (nextCurrent <= threshold) {
                                 state.next.buyPrice = nextCurrent;
+                                state.next.originalSellTarget = nextCurrent * (1 + state.next.expectedGain);
                                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                                 triggerAlarm('DIP', state.next.pair, nextCurrent);
                             }
@@ -1159,7 +1178,6 @@
                     state.lastTick = Date.now();
                     saveState();
 
-                    // SAFETY CATCH: Force shift if timer expires (bypasses visual UI sleep bugs)
                     if (Date.now() >= state.targetSellTime && state.targetSellTime > 0 && state.engineRunning && !isShifting && !isSyncingHistory && state.now.pair) {
                         log("Trade timeline expired. Executing shift...");
                         if (timerInterval) clearInterval(timerInterval);
