@@ -24,7 +24,7 @@
         
         .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
-        .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; width: 150px; cursor: pointer; margin-top: 15px; border-radius: 5px; font-size: 13px; }
+        .btn-control { padding: 8px; background-color: #8B0000; border: 1px solid white; color: white; font-weight: bold; cursor: pointer; border-radius: 5px; text-align: center; }
         
         .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; background: black; padding: 10px 0; border-top: 1px solid #333; z-index: 100; }
         marquee { font-size: 14px; color: white; display: block; width: 100%; }
@@ -86,7 +86,7 @@
         <h1 class="header-pink" style="margin-top: 40px;">Welcome!</h1>
         <h2 style="color: #FF4500; margin-bottom: 30px;">Let's Slaughter Crypto</h2>
         <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-            <button class="btn-ready" onclick="goToResults()">I'm ready!</button>
+            <button class="btn-ready" onclick="hardResetAndStart()">I'm ready!</button>
             <button class="btn-not" onclick="showPage('money')">Not yet</button>
         </div>
         <p style="font-size: 14px; margin: 15px 0; color: white; text-align: left; padding: 0 10px;">Keep in mind we are working on at minimum of 90% accuracy, but may not be there yet. Also right as you open your accuracy will be 0%, and build daily.</p>
@@ -168,8 +168,10 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn-control" onclick="pauseAndGoToHome()">Adjust profit / New pick</button>
+            <div style="display: flex; justify-content: space-around; width: 100%; margin-top: 25px; flex-wrap: wrap;">
+                <button class="btn-control" style="width: 30%; font-size: 11px;" onclick="softResetNewPick()">New pick</button>
+                <button class="btn-control" style="width: 30%; font-size: 11px;" onclick="goToMoneyPage()">Reset profit</button>
+                <button class="btn-control" style="width: 30%; font-size: 11px;" onclick="pauseAndGoToHome()">Home</button>
             </div>
             
             <div class="log-box" id="logBox">Engine ready... Waiting for initialization.</div>
@@ -185,7 +187,7 @@
     <script>
         const KRAKEN_PROXY = "https://api.kraken.com/0/public/";
         const COLOR_PALETTE = ["#FF1493", "#00FF00", "#00FFFF", "#FFFF00", "#FF4500", "#ADFF2F", "#FF00FF", "#1E90FF", "#32CD32"];
-        const SCAN_INTERVALS = [10, 15, 30]; 
+        const SCAN_INTERVALS = [1, 5, 15, 30]; 
         let audioCtx = null;
         let toastTimeout = null;
 
@@ -207,8 +209,8 @@
             daysBelow90: 0,
             cooldowns: {},
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false },
-            next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false }
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 1, tradeStartTime: 0, halfwayHit: false },
+            next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 1, equalToNotified: false }
         };
 
         let state = JSON.parse(JSON.stringify(defaultState)); 
@@ -290,7 +292,7 @@
             } else if (type === 'BREAK_EVEN') {
                 msg = `Trailing Stop Triggered! ${coin} sold at Break-Even to protect capital.`;
             } else if (type === 'BLEED') {
-                msg = `Weak win detected. ${coin} added to 60-minute Penalty Box.`;
+                msg = `Weak win detected. ${coin} added to 12-hour Penalty Box.`;
             }
 
             log(`ALARM: ${msg}`);
@@ -301,7 +303,7 @@
             if (toastTimeout) clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => {
                 toast.classList.remove('show');
-            }, 30000); // Expanded to 30 seconds
+            }, 30000); 
 
             if (navigator.vibrate) {
                 if (type === 'ENTRY') navigator.vibrate([200, 100, 200]);
@@ -459,6 +461,53 @@
             }
         }
 
+        function hardResetAndStart() {
+            initAudio();
+            
+            if(timerInterval) clearInterval(timerInterval);
+            if(livePriceInterval) clearInterval(livePriceInterval);
+            if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
+            
+            state.hunt = { strictness: 1.00, intervalIdx: 0 };
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 1, tradeStartTime: 0, halfwayHit: false };
+            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 1, equalToNotified: false };
+            state.engineRunning = false; 
+            state.lastTick = Date.now();
+            isShifting = false;
+            
+            state.todayAverage = 0;
+            state.totalAverage = 0;
+            state.tradesToday = 0;
+            state.daysRun = 0;
+            state.cooldowns = {};
+            
+            document.getElementById('lblAccToday').innerText = "0";
+            document.getElementById('lblAccTotal').innerText = "0";
+            document.getElementById('lblTradesToday').innerText = "0";
+            document.getElementById('lblAccPrice').innerText = "0";
+            document.getElementById('lblAccTimeline').innerText = "0";
+            
+            document.getElementById('lblCountdown').innerText = "00hr 00min 00sec";
+            document.getElementById('lblProfitNow').innerText = "0.00";
+            document.getElementById('profitNowWrapper').classList.remove('profit-pulse');
+            
+            document.getElementById('lblNowName').innerText = "Determining...";
+            document.getElementById('lblNowSell').innerText = "0.00";
+            document.getElementById('lblNowCurrent').innerText = "0.00";
+            
+            document.getElementById('lblNextName').innerText = "Scanning...";
+            document.getElementById('lblNextBuy').innerText = "0.00";
+            document.getElementById('lblNextCurrent').innerText = "0.00";
+            
+            log("[======= MANUAL RESTART =======]");
+            log("Hard reset complete. All historical data wiped.");
+            saveState();
+            
+            showPage('results');
+            startEngine();
+            randomizeLetterColors();
+        }
+
         function saveMoneyAndStart() {
             initAudio();
             showPage('results'); 
@@ -477,27 +526,20 @@
             }
             randomizeLetterColors();
         }
-
-        function goToResults() {
-            initAudio();
-            showPage('results'); 
-            
-            if(state.engineRunning) executeFullReset();
-            startEngine();
-            randomizeLetterColors(); 
+        
+        function goToMoneyPage() {
+            showPage('money');
         }
 
-        // NEW: This abandons active coins but preserves Daily & Total Accuracy history
-        function executeFullReset() {
+        function softResetNewPick() {
             if(timerInterval) clearInterval(timerInterval);
             if(livePriceInterval) clearInterval(livePriceInterval);
             if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
             
             state.hunt = { strictness: 1.00, intervalIdx: 0 };
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
-            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
-            state.engineRunning = false; 
-            state.lastTick = Date.now();
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 1, tradeStartTime: 0, halfwayHit: false };
+            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 1, equalToNotified: false };
+            state.engineRunning = true; 
             isShifting = false;
             
             document.getElementById('lblCountdown').innerText = "00hr 00min 00sec";
@@ -514,6 +556,9 @@
             
             log("Current trades abandoned. Hunting for new targets...");
             saveState();
+            
+            initialPopulateChain();
+            livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
         function pauseAndGoToHome() {
@@ -602,7 +647,7 @@
                 state.lastDate = currentDate;
                 state.tradesToday = 0;
                 state.todayAverage = 0;
-                state.cooldowns = {}; // NEW: Midnight Flush of the Penalty Box
+                state.cooldowns = {}; 
                 
                 document.getElementById('lblAccTotal').innerText = state.totalAverage;
                 document.getElementById('lblAccToday').innerText = "0";
@@ -929,10 +974,9 @@
             let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
             log("Trade completed. Accuracies logged.");
 
-            // NEW: 50% Penalty Box Threshold
             if (blockAverage < 50) {
                 triggerAlarm('BLEED', state.now.pair, state.now.currentPrice);
-                state.cooldowns[cleanName(state.now.pair)] = Date.now() + (60 * 60 * 1000); 
+                state.cooldowns[cleanName(state.now.pair)] = Date.now() + (12 * 60 * 60 * 1000); 
             }
 
             if (state.tradesToday === 0) {
@@ -955,7 +999,7 @@
                 state.hunt.strictness = 1.00; 
                 state.hunt.intervalIdx = 0;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 1, tradeStartTime: 0, halfwayHit: false };
                 
                 document.getElementById('lblNowName').innerText = "Determining...";
                 document.getElementById('lblNowSell').innerText = "0.00";
@@ -982,7 +1026,7 @@
             state.now.currentPrice = trueCurrent;
             state.now.peakPrice = trueCurrent; 
             state.now.blocks = state.next.blocks || 1;
-            state.now.interval = state.next.interval || 10;
+            state.now.interval = state.next.interval || 1;
             state.now.tradeStartTime = Date.now();
             state.now.halfwayHit = false;
             
@@ -1142,7 +1186,7 @@
         }
 
         function setTargetTime(blocksNeeded, intervalOverride) {
-            let interval = intervalOverride || 10; 
+            let interval = intervalOverride || 1; 
             let safeBlocks = Math.max(1, Math.min(48, blocksNeeded || 1)); 
             let totalSeconds = safeBlocks * interval * 60; 
             
