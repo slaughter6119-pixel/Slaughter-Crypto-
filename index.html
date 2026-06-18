@@ -211,7 +211,7 @@
             standbyForMidnight: false,
             cooldowns: {},
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false },
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 },
             next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false }
         };
 
@@ -287,12 +287,8 @@
                 msg = `Price dropped 2%. New floor for ${coin} at $${formatPrice(price)}.`;
             } else if (type === 'LOCKED') {
                 msg = `New target acquired: ${coin}. Scanning strictness reset to 1.00x.`;
-            } else if (type === 'HALF_HIT') {
-                msg = `50% profit reached! Stop-loss for ${coin} moved to Break-Even.`;
             } else if (type === 'MOMENTUM') {
                 msg = `Momentum Multiplier! ${coin} target raised by 1% and timer extended.`;
-            } else if (type === 'BREAK_EVEN') {
-                msg = `Trailing Stop Triggered! ${coin} sold at Break-Even to protect capital.`;
             } else if (type === 'BLEED') {
                 msg = `Bleed detected. ${coin} added to 60-minute Penalty Box.`;
             }
@@ -518,7 +514,7 @@
             state.tradesToday = 0;
             state.standbyForMidnight = false;
             state.hunt = { strictness: 1.00, intervalIdx: 0 };
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
             state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
             state.engineRunning = false; 
             state.lastTick = Date.now();
@@ -709,7 +705,6 @@
             return adx[adx.length-1] || 0;
         }
         
-        // NEW: Wilder's Smoothed RSI for momentum calculation
         function calcRSI(closes, period=14) {
             if (closes.length <= period) return 50;
             let gains = 0, losses = 0;
@@ -782,7 +777,6 @@
                             const ema9 = calcEMA(closes, 9), ema21 = calcEMA(closes, 21), ema50 = calcEMA(closes, 50);
                             let e9 = ema9[ema9.length-1], e21 = ema21[ema21.length-1], e50 = ema50[ema50.length-1];
                             
-                            // NEW: STRICT DIRECTIONAL FILTER (Bullish Alignment & RSI)
                             if (e9 <= e21 || e21 <= e50) continue; 
                             const rsi = calcRSI(closes, 14);
                             if (rsi < 52) continue;
@@ -860,7 +854,6 @@
                 state.now.blocks = scores[0].blocks;
                 state.now.interval = interval;
                 state.now.tradeStartTime = Date.now();
-                state.now.halfwayHit = false;
 
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -1023,7 +1016,7 @@
                 log("Proactive Midnight Lockout: Remaining time too short for next cycle. Standing by.");
                 state.standbyForMidnight = true;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
                 state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
                 
                 document.getElementById('lblCountdown').classList.add('standby-alert');
@@ -1042,7 +1035,7 @@
                 state.hunt.strictness = 1.00; 
                 state.hunt.intervalIdx = 0;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
                 
                 document.getElementById('lblNowName').innerText = "Determining...";
                 document.getElementById('lblNowSell').innerText = "0.00";
@@ -1071,8 +1064,10 @@
             state.now.blocks = state.next.blocks || 1;
             state.now.interval = state.next.interval || 10;
             state.now.tradeStartTime = Date.now();
-            state.now.halfwayHit = false;
             
+            // CRITICAL FIX: The Next pair must be wiped from memory so it isn't repeatedly fed back into the Now pair during scan loops.
+            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
+
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
             document.getElementById('lblNowCurrent').innerText = formatPrice(state.now.currentPrice);
@@ -1141,7 +1136,6 @@
                                 profitNowWrapper.classList.remove('profit-pulse');
                             }
 
-                            // NEW: ACTIVE NOW COLUMN DIP TRAILING
                             let nowThreshold = state.now.buyPrice * 0.98;
                             if (nowCurrent <= nowThreshold) {
                                 state.now.buyPrice = nowCurrent;
@@ -1152,22 +1146,6 @@
                                 saveState();
                             }
 
-                            if (!state.now.halfwayHit && nowCurrent >= state.now.buyPrice + (targetDiff * 0.5)) {
-                                state.now.halfwayHit = true;
-                                triggerAlarm('HALF_HIT', state.now.pair, nowCurrent);
-                                log(`50% profit margin reached. Break-even stop locked at $${formatPrice(state.now.buyPrice)}.`);
-                                saveState();
-                            }
-
-                            if (state.now.halfwayHit && nowCurrent <= state.now.buyPrice && state.engineRunning && !isShifting && !isSyncingHistory) {
-                                log("Price dropped to entry. Executing break-even trailing stop!");
-                                triggerAlarm('BREAK_EVEN', state.now.pair, nowCurrent);
-                                if (timerInterval) clearInterval(timerInterval);
-                                isShifting = true;
-                                triggerChainShift().finally(() => { isShifting = false; });
-                                return;
-                            }
-
                             if (nowCurrent >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
                                 let elapsedMs = Date.now() - (state.now.tradeStartTime || Date.now() - 300000);
                                 
@@ -1175,7 +1153,6 @@
                                     state.now.expectedGain += 0.01;
                                     state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
                                     state.targetSellTime += 5 * 60 * 1000; 
-                                    state.now.halfwayHit = false; 
                                     
                                     document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
                                     updateExpectedProfitDisplay();
