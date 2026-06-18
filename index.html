@@ -18,9 +18,9 @@
         .active { display: flex; }
         .text-center { text-align: center; }
 
-        .header-pink { color: #FF1493; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; }
-        .header-orange { color: #FF4500; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; }
-        .header-currency { color: #8A2BE2; font-size: 28px; margin: 20px 0 10px 0; text-align: center; font-weight: bold; width: 100%; }
+        .header-pink { color: #FF1493; font-size: 28px; margin: 15px 0 5px 0; text-align: center; font-weight: bold; width: 100%; }
+        .header-orange { color: #FF4500; font-size: 28px; margin: 15px 0 5px 0; text-align: center; font-weight: bold; width: 100%; }
+        .header-currency { color: #8A2BE2; font-size: 28px; margin: 15px 0 5px 0; text-align: center; font-weight: bold; width: 100%; }
         
         .btn-ready { background-color: #00FF00; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
         .btn-not { background-color: #FF69B4; color: black; border: none; padding: 10px 20px; font-weight: bold; margin: 10px 5px; cursor: pointer; border-radius: 0; font-size: 16px; }
@@ -32,17 +32,17 @@
         .money-input { width: 60px; background: black; border: 1px solid #FF1493; color: white; text-align: center; padding: 5px; font-size: 16px; margin-bottom: 15px; }
 
         .results-container { width: 100%; max-width: 400px; margin: 0 auto; }
-        .flex-row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 20px; }
+        .flex-row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 4px; }
         .flex-col { display: flex; flex-direction: column; width: 48%; }
         
         .random-color { font-size: 14px; font-weight: normal; }
         .white-data { color: #FFFFFF; font-size: 14px; font-weight: bold; }
         
-        .accuracy-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 8px; font-size: 16px; }
+        .accuracy-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 2px; font-size: 16px; }
         .accuracy-label { text-align: left; }
         .accuracy-data { color: #FFFFFF; font-weight: bold; text-align: right; transition: all 0.3s ease; }
 
-        .log-box { width: 100%; max-height: 80px; background: #111; border: 1px solid #333; font-size: 11px; color: #00FF00; overflow-y: auto; text-align: left; padding: 5px; margin-top: 20px; font-family: monospace; }
+        .log-box { width: 100%; height: 140px; background: #111; border: 1px solid #333; font-size: 11px; color: #00FF00; overflow-y: auto; text-align: left; padding: 5px; margin-top: 15px; font-family: monospace; }
         
         @keyframes pulse-green {
             0% { opacity: 1; color: #00FF00; text-shadow: 0 0 5px #00FF00; }
@@ -105,21 +105,21 @@
             
             <div class="header-pink" style="font-weight: normal;"><u>Results</u></div>
             
-            <div class="flex-row" style="margin-bottom: 15px;">
+            <div class="flex-row">
                 <div style="width: 50%; text-align: left;">
-                    <span class="random-color">Countdown to sell-</span> <br><span class="white-data" id="lblCountdown">00hr 00min 00sec</span>
+                    <span class="random-color">Countdown to sell-</span><br><span class="white-data" id="lblCountdown">00hr 00min 00sec</span>
                 </div>
                 <div style="width: 50%; text-align: right;">
-                    <span class="random-color">Profit expected-</span> <br><span class="white-data">$<span id="lblProfit">0.00</span></span>
+                    <span class="random-color">Profit expected-</span><br><span class="white-data">$<span id="lblProfit">0.00</span></span>
                 </div>
             </div>
 
-            <div class="flex-row" style="margin-bottom: 20px;">
+            <div class="flex-row">
                 <div style="width: 50%; text-align: left;">
-                    <span class="random-color">Transactions today-</span> <br><span class="white-data" id="lblTradesToday">0</span>
+                    <span class="random-color">Transactions today-</span><br><span class="white-data" id="lblTradesToday">0</span>
                 </div>
                 <div style="width: 50%; text-align: right;">
-                    <span class="random-color">Profit now-</span> <br><span class="white-data" id="profitNowWrapper">$<span id="lblProfitNow">0.00</span></span>
+                    <span class="random-color">Profit now-</span><br><span class="white-data" id="profitNowWrapper">$<span id="lblProfitNow">0.00</span></span>
                 </div>
             </div>
 
@@ -130,10 +130,10 @@
                     <span class="random-color" style="font-size: 21px;">Now-</span>
                     <span class="white-data" id="lblNowName">Determining...</span>
                     
-                    <span class="random-color" style="margin-top: 10px;">Sell price-</span>
+                    <span class="random-color" style="margin-top: 4px;">Sell price-</span>
                     <span class="white-data">$<span id="lblNowSell">0.00</span></span>
                     
-                    <span class="random-color" style="margin-top: 10px;">Current-</span>
+                    <span class="random-color" style="margin-top: 4px;">Current-</span>
                     <span class="white-data">$<span id="lblNowCurrent">0.00</span></span>
                 </div>
                 
@@ -141,10 +141,10 @@
                     <span class="random-color" style="font-size: 21px;">Next-</span>
                     <span class="white-data" id="lblNextName">Scanning...</span>
                     
-                    <span class="random-color" style="margin-top: 10px;">Buy price-</span>
+                    <span class="random-color" style="margin-top: 4px;">Buy price-</span>
                     <span class="white-data">$<span id="lblNextBuy">0.00</span></span>
                     
-                    <span class="random-color" style="margin-top: 10px;">Current-</span>
+                    <span class="random-color" style="margin-top: 4px;">Current-</span>
                     <span class="white-data">$<span id="lblNextCurrent">0.00</span></span>
                 </div>
             </div>
@@ -168,7 +168,7 @@
                 <span class="accuracy-data"><span id="lblAccTimeline">0</span>%</span>
             </div>
 
-            <div style="display: flex; justify-content: space-around; width: 100%; margin-top: 25px; flex-wrap: wrap;">
+            <div style="display: flex; justify-content: space-around; width: 100%; margin-top: 15px; flex-wrap: wrap;">
                 <button class="btn-control" style="width: 30%; font-size: 11px;" onclick="softResetNewPick()">New pick</button>
                 <button class="btn-control" style="width: 30%; font-size: 11px;" onclick="goToMoneyPage()">Reset profit</button>
                 <button class="btn-control" style="width: 30%; font-size: 11px;" onclick="pauseAndGoToHome()">Home</button>
@@ -1059,7 +1059,8 @@
                 
                 if(json.result) {
                     const keys = Object.keys(json.result);
-                    let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
+                    let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','replace('USD','')))); // <-- Fixed duplicate parenthesis in original if present, otherwise ignore
+                    nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
                     
                     if(nowKey) {
                         let nowCurrent = parseFloat(json.result[nowKey].c[0]);
