@@ -1059,8 +1059,7 @@
                 
                 if(json.result) {
                     const keys = Object.keys(json.result);
-                    let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','replace('USD','')))); // <-- Fixed duplicate parenthesis in original if present, otherwise ignore
-                    nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
+                    let nowKey = keys.find(k => k.includes(state.now.pair.replace('USDT','').replace('USD','')));
                     
                     if(nowKey) {
                         let nowCurrent = parseFloat(json.result[nowKey].c[0]);
