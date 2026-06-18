@@ -204,7 +204,7 @@
             daysRun: 0,
             totalAverage: 0, 
             
-            hunt: { strictness: 1.00, intervalIdx: 0 },
+            hunt: { decayStep: 0, intervalIdx: 0 },
 
             maxProfitCeiling: 1.00,
             daysBelow90: 0,
@@ -225,7 +225,7 @@
                 state.now = { ...defaultState.now, ...(savedState.now || {}) };
                 state.next = { ...defaultState.next, ...(savedState.next || {}) };
                 state.cooldowns = { ...defaultState.cooldowns, ...(savedState.cooldowns || {}) };
-                if (!state.hunt) state.hunt = { strictness: 1.00, intervalIdx: 0 };
+                if (!state.hunt) state.hunt = { decayStep: 0, intervalIdx: 0 };
             }
         } catch (e) {
             state = JSON.parse(JSON.stringify(defaultState));
@@ -286,7 +286,7 @@
             } else if (type === 'DIP') {
                 msg = `Price dropped 2%. New floor for ${coin} at $${formatPrice(price)}.`;
             } else if (type === 'LOCKED') {
-                msg = `New target acquired: ${coin}. Scanning strictness reset to 1.00x.`;
+                msg = `New target acquired: ${coin}. Decay parameters reset to Baseline.`;
             } else if (type === 'MOMENTUM') {
                 msg = `Momentum Multiplier! ${coin} target raised by 1% and timer extended.`;
             } else if (type === 'BLEED') {
@@ -513,7 +513,7 @@
             state.todayAverage = 0;
             state.tradesToday = 0;
             state.standbyForMidnight = false;
-            state.hunt = { strictness: 1.00, intervalIdx: 0 };
+            state.hunt = { decayStep: 0, intervalIdx: 0 };
             state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
             state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
             state.engineRunning = false; 
@@ -727,7 +727,7 @@
             return 100 - (100 / (1 + rs));
         }
 
-        async function fetchMarketScores(interval, strictness) {
+        async function fetchMarketScores(interval, decayStep) {
             try {
                 const tickerRes = await fetch(`${KRAKEN_PROXY}Ticker`);
                 const tickerJson = await tickerRes.json();
@@ -735,16 +735,26 @@
 
                 const allPairs = Object.keys(tickerJson.result);
                 let activeCoins = [];
+                
+                // Fetch ALL active USD/USDT pairs, regardless of transaction count limits
                 for (let pair of allPairs) {
                     if (pair.endsWith("USD") || pair.endsWith("USDT")) {
                         let trades24h = parseInt(tickerJson.result[pair].t[1]);
-                        if (trades24h > 1500) activeCoins.push({ pair: pair, trades: trades24h });
+                        if (trades24h > 0) activeCoins.push({ pair: pair });
                     }
                 }
 
-                activeCoins.sort((a, b) => b.trades - a.trades);
-                const topTargets = activeCoins.slice(0, 12).map(c => c.pair);
+                const topTargets = activeCoins.map(c => c.pair);
                 let marketScores = [], seenBases = new Set(); 
+
+                // Apply Staged Parameter Decay
+                let currentRSI = 52, currentADX = 20, currentVolMult = 1.5;
+                if(decayStep === 1) { currentRSI = 50; }
+                else if(decayStep === 2) { currentADX = 15; }
+                else if(decayStep === 3) { currentRSI = 50; currentADX = 15; }
+                else if(decayStep === 4) { currentRSI = 50; currentADX = 15; currentVolMult = 1.4; }
+                else if(decayStep === 5) { currentRSI = 50; currentADX = 15; currentVolMult = 1.3; }
+                else if(decayStep >= 6) { currentRSI = 50; currentADX = 15; currentVolMult = 1.2; }
 
                 for(let pair of topTargets) {
                     let baseName = cleanName(pair);
@@ -779,14 +789,14 @@
                             
                             if (e9 <= e21 || e21 <= e50) continue; 
                             const rsi = calcRSI(closes, 14);
-                            if (rsi < 52) continue;
+                            if (rsi < currentRSI) continue;
 
                             const adx = calcADX(highs, lows, closes, 14);
-                            if (adx < 20) continue; 
+                            if (adx < currentADX) continue; 
 
                             let spread = highs[highs.length-1] - lows[lows.length-1];
                             let closePos = (currentPrice - lows[lows.length-1]) / (spread || 1);
-                            if (currentVolume > avgVol * 1.5 && closePos < 0.4) continue; 
+                            if (currentVolume > avgVol * currentVolMult && closePos < 0.4) continue; 
                             
                             const atr = calcATR(highs, lows, closes);
                             
@@ -813,7 +823,7 @@
                             if (totalExpectedMinutes > 60) continue;
                             
                             let score = 0;
-                            if ((currentVolume / (avgVol || 1)) >= (1.5 * strictness)) score += 40; 
+                            if ((currentVolume / (avgVol || 1)) >= currentVolMult) score += 40; 
                             
                             seenBases.add(baseName); 
                             marketScores.push({ pair, price: currentPrice, score, expectedGain: dynamicGainTarget, blocks: blocksNeeded });
@@ -829,9 +839,9 @@
             if (state.standbyForMidnight || !state.engineRunning) return;
 
             let interval = SCAN_INTERVALS[state.hunt.intervalIdx];
-            log(`Analytic sweep... [Strictness: ${state.hunt.strictness.toFixed(2)}x | ${interval}m block]`);
+            log(`Analytic sweep... [Decay Step: ${state.hunt.decayStep} | ${interval}m block]`);
             
-            const scores = await fetchMarketScores(interval, state.hunt.strictness);
+            const scores = await fetchMarketScores(interval, state.hunt.decayStep);
             
             if(scores.length >= 2) {
                 let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
@@ -874,7 +884,7 @@
                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                 document.getElementById('lblNextCurrent').innerText = formatPrice(state.next.currentPrice);
 
-                state.hunt.strictness = 1.00;
+                state.hunt.decayStep = 0;
                 state.hunt.intervalIdx = 0;
 
                 triggerAlarm('LOCKED', state.now.pair, state.now.buyPrice);
@@ -886,11 +896,11 @@
                 state.hunt.intervalIdx++;
                 if (state.hunt.intervalIdx >= SCAN_INTERVALS.length) {
                     state.hunt.intervalIdx = 0;
-                    state.hunt.strictness = Math.max(0.90, state.hunt.strictness - 0.01);
+                    state.hunt.decayStep = Math.min(6, state.hunt.decayStep + 1);
                 }
-                log("Market poor. Adjusting depth parameters. Rescanning in 15s...");
+                log("Market poor. Adjusting depth parameters. Rescanning in 7s...");
                 if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
-                scanRetryTimeout = setTimeout(initialPopulateChain, 15000);
+                scanRetryTimeout = setTimeout(initialPopulateChain, 7000);
             }
         }
 
@@ -898,9 +908,9 @@
             if (state.standbyForMidnight || !state.engineRunning) return;
             
             let interval = SCAN_INTERVALS[state.hunt.intervalIdx];
-            log(`Hunting Next target... [Strictness: ${state.hunt.strictness.toFixed(2)}x | ${interval}m block]`);
+            log(`Hunting Next target... [Decay Step: ${state.hunt.decayStep} | ${interval}m block]`);
 
-            const scores = await fetchMarketScores(interval, state.hunt.strictness);
+            const scores = await fetchMarketScores(interval, state.hunt.decayStep);
             let newNext = scores.find(s => cleanName(s.pair) !== cleanName(state.now.pair)); 
             
             if(newNext) {
@@ -918,7 +928,7 @@
                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                 document.getElementById('lblNextCurrent').innerText = formatPrice(state.next.currentPrice);
                 
-                state.hunt.strictness = 1.00;
+                state.hunt.decayStep = 0;
                 state.hunt.intervalIdx = 0;
 
                 triggerAlarm('LOCKED', state.next.pair, state.next.buyPrice);
@@ -927,11 +937,11 @@
                 state.hunt.intervalIdx++;
                 if (state.hunt.intervalIdx >= SCAN_INTERVALS.length) {
                     state.hunt.intervalIdx = 0;
-                    state.hunt.strictness = Math.max(0.90, state.hunt.strictness - 0.01);
+                    state.hunt.decayStep = Math.min(6, state.hunt.decayStep + 1);
                 }
-                log("Market poor. Adjusting depth parameters. Rescanning in 15s...");
+                log("Market poor. Adjusting depth parameters. Rescanning in 7s...");
                 if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
-                scanRetryTimeout = setTimeout(findNextCoinRetrier, 15000);
+                scanRetryTimeout = setTimeout(findNextCoinRetrier, 7000);
             }
         }
 
@@ -1032,7 +1042,7 @@
 
             if (!state.next.pair || (state.cooldowns[cleanName(state.next.pair)] && Date.now() < state.cooldowns[cleanName(state.next.pair)])) {
                 log("Chain broken or Next coin blacklisted. Halting timer and resetting hunt...");
-                state.hunt.strictness = 1.00; 
+                state.hunt.decayStep = 0; 
                 state.hunt.intervalIdx = 0;
                 
                 state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
@@ -1065,7 +1075,6 @@
             state.now.interval = state.next.interval || 10;
             state.now.tradeStartTime = Date.now();
             
-            // CRITICAL FIX: The Next pair must be wiped from memory so it isn't repeatedly fed back into the Now pair during scan loops.
             state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
 
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
