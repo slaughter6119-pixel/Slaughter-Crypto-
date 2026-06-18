@@ -44,9 +44,6 @@
 
         .log-box { width: 100%; max-height: 80px; background: #111; border: 1px solid #333; font-size: 11px; color: #00FF00; overflow-y: auto; text-align: left; padding: 5px; margin-top: 20px; font-family: monospace; }
         
-        .standby-alert { color: #FF4500; font-weight: bold; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
         @keyframes pulse-green {
             0% { opacity: 1; color: #00FF00; text-shadow: 0 0 5px #00FF00; }
             50% { opacity: 0.4; color: #00FF00; text-shadow: none; }
@@ -204,14 +201,13 @@
             daysRun: 0,
             totalAverage: 0, 
             
-            hunt: { decayStep: 0, intervalIdx: 0 },
+            hunt: { strictness: 1.00, intervalIdx: 0 },
 
             maxProfitCeiling: 1.00,
             daysBelow90: 0,
-            standbyForMidnight: false,
             cooldowns: {},
 
-            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 },
+            now: { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false },
             next: { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false }
         };
 
@@ -225,7 +221,7 @@
                 state.now = { ...defaultState.now, ...(savedState.now || {}) };
                 state.next = { ...defaultState.next, ...(savedState.next || {}) };
                 state.cooldowns = { ...defaultState.cooldowns, ...(savedState.cooldowns || {}) };
-                if (!state.hunt) state.hunt = { decayStep: 0, intervalIdx: 0 };
+                if (!state.hunt) state.hunt = { strictness: 1.00, intervalIdx: 0 };
             }
         } catch (e) {
             state = JSON.parse(JSON.stringify(defaultState));
@@ -286,11 +282,15 @@
             } else if (type === 'DIP') {
                 msg = `Price dropped 2%. New floor for ${coin} at $${formatPrice(price)}.`;
             } else if (type === 'LOCKED') {
-                msg = `New target acquired: ${coin}. Decay parameters reset to Baseline.`;
+                msg = `New target acquired: ${coin}. Scanning strictness reset to 1.00x.`;
+            } else if (type === 'HALF_HIT') {
+                msg = `50% profit reached! Stop-loss for ${coin} moved to Break-Even.`;
             } else if (type === 'MOMENTUM') {
                 msg = `Momentum Multiplier! ${coin} target raised by 1% and timer extended.`;
+            } else if (type === 'BREAK_EVEN') {
+                msg = `Trailing Stop Triggered! ${coin} sold at Break-Even to protect capital.`;
             } else if (type === 'BLEED') {
-                msg = `Bleed detected. ${coin} added to 60-minute Penalty Box.`;
+                msg = `Weak win detected. ${coin} added to 60-minute Penalty Box.`;
             }
 
             log(`ALARM: ${msg}`);
@@ -301,7 +301,7 @@
             if (toastTimeout) clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => {
                 toast.classList.remove('show');
-            }, 5000);
+            }, 30000); // Expanded to 30 seconds
 
             if (navigator.vibrate) {
                 if (type === 'ENTRY') navigator.vibrate([200, 100, 200]);
@@ -354,7 +354,7 @@
         };
 
         document.addEventListener("visibilitychange", async () => {
-            if (document.visibilityState === "visible" && state.engineRunning && !state.standbyForMidnight) {
+            if (document.visibilityState === "visible" && state.engineRunning) {
                 let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
                 if (secondsOffline > 45) {
                     log(`Syncing tracking history...`);
@@ -378,25 +378,11 @@
                         const keys = Object.keys(jsonNow.result).filter(k => k !== 'last');
                         if (keys[0] && jsonNow.result[keys[0]]) {
                             let highestFound = state.now.peakPrice;
-                            let lowestFoundNow = state.now.buyPrice;
                             for (let c of jsonNow.result[keys[0]]) {
                                 let high = parseFloat(c[2]);
-                                let low = parseFloat(c[3]);
                                 if (high > highestFound) highestFound = high;
-                                if (low < lowestFoundNow) lowestFoundNow = low;
                             }
                             if (highestFound > state.now.peakPrice) state.now.peakPrice = highestFound;
-                            
-                            let nowThreshold = state.now.buyPrice * 0.98;
-                            if (lowestFoundNow <= nowThreshold) {
-                                state.now.buyPrice = lowestFoundNow;
-                                state.now.sellTarget = lowestFoundNow * (1 + state.now.expectedGain);
-                                triggerAlarm('DIP', state.now.pair, lowestFoundNow);
-                                
-                                let nowSellUI = document.getElementById('lblNowSell');
-                                if (nowSellUI) nowSellUI.innerText = formatPrice(state.now.sellTarget);
-                                updateExpectedProfitDisplay();
-                            }
                         }
                     }
                 }
@@ -501,30 +487,20 @@
             randomizeLetterColors(); 
         }
 
+        // NEW: This abandons active coins but preserves Daily & Total Accuracy history
         function executeFullReset() {
             if(timerInterval) clearInterval(timerInterval);
             if(livePriceInterval) clearInterval(livePriceInterval);
             if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
             
-            state.investment = 0; 
-            document.getElementById('investmentInput').value = '';
-            document.getElementById('lblProfit').innerText = "0.00";
-            
-            state.todayAverage = 0;
-            state.tradesToday = 0;
-            state.standbyForMidnight = false;
-            state.hunt = { decayStep: 0, intervalIdx: 0 };
-            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
+            state.hunt = { strictness: 1.00, intervalIdx: 0 };
+            state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
             state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
             state.engineRunning = false; 
             state.lastTick = Date.now();
             isShifting = false;
             
-            document.getElementById('lblAccToday').innerText = "0";
-            document.getElementById('lblAccPrice').innerText = "0";
-            document.getElementById('lblAccTimeline').innerText = "0";
             document.getElementById('lblCountdown').innerText = "00hr 00min 00sec";
-            document.getElementById('lblTradesToday').innerText = "0";
             document.getElementById('lblProfitNow').innerText = "0.00";
             document.getElementById('profitNowWrapper').classList.remove('profit-pulse');
             
@@ -536,7 +512,7 @@
             document.getElementById('lblNextBuy').innerText = "0.00";
             document.getElementById('lblNextCurrent').innerText = "0.00";
             
-            log("Engine data reset.");
+            log("Current trades abandoned. Hunting for new targets...");
             saveState();
         }
 
@@ -548,9 +524,6 @@
         }
 
         function restoreUI() {
-            if (state.standbyForMidnight) {
-                document.getElementById('lblCountdown').innerText = "STANDBY";
-            }
             if(state.now && state.now.pair) {
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -574,15 +547,13 @@
             if (midnightCheckInterval) clearInterval(midnightCheckInterval);
             midnightCheckInterval = setInterval(checkDailyReset, 60000); 
             
-            if(!state.now.pair && !state.standbyForMidnight) {
+            if(!state.now.pair) {
                 await initialPopulateChain();
             }
             
-            if (!state.standbyForMidnight) {
-                updateLivePricesAndAccuracy(); 
-                if (livePriceInterval) clearInterval(livePriceInterval);
-                livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
-            }
+            updateLivePricesAndAccuracy(); 
+            if (livePriceInterval) clearInterval(livePriceInterval);
+            livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
         async function resumeEngine() {
@@ -593,27 +564,16 @@
             if (midnightCheckInterval) clearInterval(midnightCheckInterval);
             midnightCheckInterval = setInterval(checkDailyReset, 60000);
             
-            if (!state.standbyForMidnight) {
-                startCountdownVisuals();
-                updateLivePricesAndAccuracy(); 
-                if (livePriceInterval) clearInterval(livePriceInterval);
-                livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
-            }
+            startCountdownVisuals();
+            updateLivePricesAndAccuracy(); 
+            if (livePriceInterval) clearInterval(livePriceInterval);
+            livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
         }
 
         async function checkDailyReset() {
             let currentDate = new Date().getDate();
             if (currentDate !== state.lastDate) {
                 
-                if (state.now && state.now.pair && state.engineRunning && !isShifting) {
-                    if (Date.now() >= state.targetSellTime || state.now.currentPrice >= state.now.sellTarget) {
-                        log("Pending settlement detected. Grading final trade before rollover...");
-                        isShifting = true;
-                        await triggerChainShift();
-                        isShifting = false;
-                    }
-                }
-
                 if (state.daysRun === 0) {
                     state.totalAverage = state.todayAverage;
                 } else {
@@ -642,23 +602,13 @@
                 state.lastDate = currentDate;
                 state.tradesToday = 0;
                 state.todayAverage = 0;
-                state.investment = 0;
+                state.cooldowns = {}; // NEW: Midnight Flush of the Penalty Box
                 
                 document.getElementById('lblAccTotal').innerText = state.totalAverage;
                 document.getElementById('lblAccToday').innerText = "0";
-                document.getElementById('lblProfit').innerText = "0.00";
                 document.getElementById('lblTradesToday').innerText = "0";
-                document.getElementById('lblProfitNow').innerText = "0.00";
-                document.getElementById('profitNowWrapper').classList.remove('profit-pulse');
                 
-                log("Daily logs calculated. Midnight lockout lifted.");
-                
-                if (state.standbyForMidnight) {
-                    state.standbyForMidnight = false;
-                    await initialPopulateChain();
-                    if (livePriceInterval) clearInterval(livePriceInterval);
-                    livePriceInterval = setInterval(updateLivePricesAndAccuracy, 2500);
-                }
+                log("Daily logs calculated. Penalty Box flushed for the new day.");
                 saveState();
             }
         }
@@ -727,7 +677,7 @@
             return 100 - (100 / (1 + rs));
         }
 
-        async function fetchMarketScores(interval, decayStep) {
+        async function fetchMarketScores(interval, strictness) {
             try {
                 const tickerRes = await fetch(`${KRAKEN_PROXY}Ticker`);
                 const tickerJson = await tickerRes.json();
@@ -735,26 +685,16 @@
 
                 const allPairs = Object.keys(tickerJson.result);
                 let activeCoins = [];
-                
-                // Fetch ALL active USD/USDT pairs, regardless of transaction count limits
                 for (let pair of allPairs) {
                     if (pair.endsWith("USD") || pair.endsWith("USDT")) {
                         let trades24h = parseInt(tickerJson.result[pair].t[1]);
-                        if (trades24h > 0) activeCoins.push({ pair: pair });
+                        if (trades24h > 1500) activeCoins.push({ pair: pair, trades: trades24h });
                     }
                 }
 
-                const topTargets = activeCoins.map(c => c.pair);
+                activeCoins.sort((a, b) => b.trades - a.trades);
+                const topTargets = activeCoins.slice(0, 12).map(c => c.pair);
                 let marketScores = [], seenBases = new Set(); 
-
-                // Apply Staged Parameter Decay
-                let currentRSI = 52, currentADX = 20, currentVolMult = 1.5;
-                if(decayStep === 1) { currentRSI = 50; }
-                else if(decayStep === 2) { currentADX = 15; }
-                else if(decayStep === 3) { currentRSI = 50; currentADX = 15; }
-                else if(decayStep === 4) { currentRSI = 50; currentADX = 15; currentVolMult = 1.4; }
-                else if(decayStep === 5) { currentRSI = 50; currentADX = 15; currentVolMult = 1.3; }
-                else if(decayStep >= 6) { currentRSI = 50; currentADX = 15; currentVolMult = 1.2; }
 
                 for(let pair of topTargets) {
                     let baseName = cleanName(pair);
@@ -789,14 +729,14 @@
                             
                             if (e9 <= e21 || e21 <= e50) continue; 
                             const rsi = calcRSI(closes, 14);
-                            if (rsi < currentRSI) continue;
+                            if (rsi < 52) continue;
 
                             const adx = calcADX(highs, lows, closes, 14);
-                            if (adx < currentADX) continue; 
+                            if (adx < 20) continue; 
 
                             let spread = highs[highs.length-1] - lows[lows.length-1];
                             let closePos = (currentPrice - lows[lows.length-1]) / (spread || 1);
-                            if (currentVolume > avgVol * currentVolMult && closePos < 0.4) continue; 
+                            if (currentVolume > avgVol * 1.5 && closePos < 0.4) continue; 
                             
                             const atr = calcATR(highs, lows, closes);
                             
@@ -823,7 +763,7 @@
                             if (totalExpectedMinutes > 60) continue;
                             
                             let score = 0;
-                            if ((currentVolume / (avgVol || 1)) >= currentVolMult) score += 40; 
+                            if ((currentVolume / (avgVol || 1)) >= (1.5 * strictness)) score += 40; 
                             
                             seenBases.add(baseName); 
                             marketScores.push({ pair, price: currentPrice, score, expectedGain: dynamicGainTarget, blocks: blocksNeeded });
@@ -836,25 +776,14 @@
         }
 
         async function initialPopulateChain() {
-            if (state.standbyForMidnight || !state.engineRunning) return;
+            if (!state.engineRunning) return;
 
             let interval = SCAN_INTERVALS[state.hunt.intervalIdx];
-            log(`Analytic sweep... [Decay Step: ${state.hunt.decayStep} | ${interval}m block]`);
+            log(`Analytic sweep... [Strictness: ${state.hunt.strictness.toFixed(2)}x | ${interval}m block]`);
             
-            const scores = await fetchMarketScores(interval, state.hunt.decayStep);
+            const scores = await fetchMarketScores(interval, state.hunt.strictness);
             
             if(scores.length >= 2) {
-                let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
-                let msNeededForNow = Math.max(1, Math.min(48, scores[0].blocks || 1)) * interval * 60 * 1000;
-
-                if (msNeededForNow >= msToMidnight) {
-                    log("Proactive Midnight Lockout: Remaining time too short for trade. Standing by.");
-                    state.standbyForMidnight = true;
-                    document.getElementById('lblCountdown').classList.add('standby-alert');
-                    document.getElementById('lblCountdown').innerText = "STANDBY";
-                    return;
-                }
-
                 state.now.pair = scores[0].pair;
                 state.now.expectedGain = scores[0].expectedGain;
                 state.now.buyPrice = scores[0].price; 
@@ -864,6 +793,7 @@
                 state.now.blocks = scores[0].blocks;
                 state.now.interval = interval;
                 state.now.tradeStartTime = Date.now();
+                state.now.halfwayHit = false;
 
                 document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
                 document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
@@ -884,7 +814,7 @@
                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                 document.getElementById('lblNextCurrent').innerText = formatPrice(state.next.currentPrice);
 
-                state.hunt.decayStep = 0;
+                state.hunt.strictness = 1.00;
                 state.hunt.intervalIdx = 0;
 
                 triggerAlarm('LOCKED', state.now.pair, state.now.buyPrice);
@@ -896,21 +826,21 @@
                 state.hunt.intervalIdx++;
                 if (state.hunt.intervalIdx >= SCAN_INTERVALS.length) {
                     state.hunt.intervalIdx = 0;
-                    state.hunt.decayStep = Math.min(6, state.hunt.decayStep + 1);
+                    state.hunt.strictness = Math.max(0.90, state.hunt.strictness - 0.01);
                 }
-                log("Market poor. Adjusting depth parameters. Rescanning in 7s...");
+                log("Market poor. Adjusting depth parameters. Rescanning in 15s...");
                 if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
-                scanRetryTimeout = setTimeout(initialPopulateChain, 7000);
+                scanRetryTimeout = setTimeout(initialPopulateChain, 15000);
             }
         }
 
         async function findNextCoinRetrier() {
-            if (state.standbyForMidnight || !state.engineRunning) return;
+            if (!state.engineRunning) return;
             
             let interval = SCAN_INTERVALS[state.hunt.intervalIdx];
-            log(`Hunting Next target... [Decay Step: ${state.hunt.decayStep} | ${interval}m block]`);
+            log(`Hunting Next target... [Strictness: ${state.hunt.strictness.toFixed(2)}x | ${interval}m block]`);
 
-            const scores = await fetchMarketScores(interval, state.hunt.decayStep);
+            const scores = await fetchMarketScores(interval, state.hunt.strictness);
             let newNext = scores.find(s => cleanName(s.pair) !== cleanName(state.now.pair)); 
             
             if(newNext) {
@@ -928,7 +858,7 @@
                 document.getElementById('lblNextBuy').innerText = formatPrice(state.next.buyPrice);
                 document.getElementById('lblNextCurrent').innerText = formatPrice(state.next.currentPrice);
                 
-                state.hunt.decayStep = 0;
+                state.hunt.strictness = 1.00;
                 state.hunt.intervalIdx = 0;
 
                 triggerAlarm('LOCKED', state.next.pair, state.next.buyPrice);
@@ -937,16 +867,16 @@
                 state.hunt.intervalIdx++;
                 if (state.hunt.intervalIdx >= SCAN_INTERVALS.length) {
                     state.hunt.intervalIdx = 0;
-                    state.hunt.decayStep = Math.min(6, state.hunt.decayStep + 1);
+                    state.hunt.strictness = Math.max(0.90, state.hunt.strictness - 0.01);
                 }
-                log("Market poor. Adjusting depth parameters. Rescanning in 7s...");
+                log("Market poor. Adjusting depth parameters. Rescanning in 15s...");
                 if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
-                scanRetryTimeout = setTimeout(findNextCoinRetrier, 7000);
+                scanRetryTimeout = setTimeout(findNextCoinRetrier, 15000);
             }
         }
 
         async function triggerChainShift() {
-            if (isSyncingHistory || state.standbyForMidnight || !state.now.pair) return;
+            if (isSyncingHistory || !state.now.pair) return;
             log("Analyzing trade execution window...");
             
             let secondsOffline = Math.floor((Date.now() - state.lastTick) / 1000);
@@ -996,13 +926,14 @@
             finalPriceAcc = Math.round(finalPriceAcc || 0);
             finalTimelineAcc = Math.round(finalTimelineAcc || 0);
 
-            if (finalPriceAcc < 0) {
+            let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
+            log("Trade completed. Accuracies logged.");
+
+            // NEW: 50% Penalty Box Threshold
+            if (blockAverage < 50) {
                 triggerAlarm('BLEED', state.now.pair, state.now.currentPrice);
                 state.cooldowns[cleanName(state.now.pair)] = Date.now() + (60 * 60 * 1000); 
             }
-
-            let blockAverage = (finalPriceAcc + finalTimelineAcc) / 2;
-            log("Trade completed. Accuracies logged.");
 
             if (state.tradesToday === 0) {
                 state.todayAverage = blockAverage;
@@ -1019,33 +950,12 @@
             timelineEl.innerText = "0";
             timelineEl.classList.remove('profit-pulse');
 
-            let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
-            let msNeededForNext = Math.max(1, Math.min(48, state.next.blocks || 1)) * (state.next.interval || 30) * 60 * 1000;
-
-            if (msNeededForNext >= msToMidnight) {
-                log("Proactive Midnight Lockout: Remaining time too short for next cycle. Standing by.");
-                state.standbyForMidnight = true;
-                
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
-                state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
-                
-                document.getElementById('lblCountdown').classList.add('standby-alert');
-                document.getElementById('lblCountdown').innerText = "STANDBY";
-                document.getElementById('lblNowName').innerText = "-";
-                document.getElementById('lblNextName').innerText = "-";
-                
-                if (timerInterval) clearInterval(timerInterval);
-                if (livePriceInterval) clearInterval(livePriceInterval);
-                saveState();
-                return;
-            }
-
             if (!state.next.pair || (state.cooldowns[cleanName(state.next.pair)] && Date.now() < state.cooldowns[cleanName(state.next.pair)])) {
                 log("Chain broken or Next coin blacklisted. Halting timer and resetting hunt...");
-                state.hunt.decayStep = 0; 
+                state.hunt.strictness = 1.00; 
                 state.hunt.intervalIdx = 0;
                 
-                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0 };
+                state.now = { pair: "", buyPrice: 0, sellTarget: 0, peakPrice: 0, currentPrice: 0, expectedGain: 0.02, blocks: 1, interval: 10, tradeStartTime: 0, halfwayHit: false };
                 
                 document.getElementById('lblNowName').innerText = "Determining...";
                 document.getElementById('lblNowSell').innerText = "0.00";
@@ -1055,7 +965,7 @@
                 document.getElementById('lblNextBuy').innerText = "0.00";
                 document.getElementById('lblNextCurrent').innerText = "0.00";
                 
-                document.getElementById('lblCountdown').innerText = "STANDBY";
+                document.getElementById('lblCountdown').innerText = "00hr 00min 00sec";
                 if(timerInterval) clearInterval(timerInterval);
                 
                 saveState();
@@ -1074,9 +984,8 @@
             state.now.blocks = state.next.blocks || 1;
             state.now.interval = state.next.interval || 10;
             state.now.tradeStartTime = Date.now();
+            state.now.halfwayHit = false;
             
-            state.next = { pair: "", buyPrice: 0, expectedGain: 0.02, currentPrice: 0, lowestPrice: 0, originalSellTarget: 0, blocks: 1, interval: 10, equalToNotified: false };
-
             document.getElementById('lblNowName').innerText = cleanName(state.now.pair);
             document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
             document.getElementById('lblNowCurrent').innerText = formatPrice(state.now.currentPrice);
@@ -1093,7 +1002,7 @@
         }
 
         async function updateLivePricesAndAccuracy() {
-            if(!state.now.pair || isSyncingHistory || state.standbyForMidnight) return;
+            if(!state.now.pair || isSyncingHistory) return;
 
             try {
                 let pairQuery = state.now.pair;
@@ -1145,14 +1054,20 @@
                                 profitNowWrapper.classList.remove('profit-pulse');
                             }
 
-                            let nowThreshold = state.now.buyPrice * 0.98;
-                            if (nowCurrent <= nowThreshold) {
-                                state.now.buyPrice = nowCurrent;
-                                state.now.sellTarget = nowCurrent * (1 + state.now.expectedGain);
-                                document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
-                                updateExpectedProfitDisplay();
-                                triggerAlarm('DIP', state.now.pair, nowCurrent);
+                            if (!state.now.halfwayHit && nowCurrent >= state.now.buyPrice + (targetDiff * 0.5)) {
+                                state.now.halfwayHit = true;
+                                triggerAlarm('HALF_HIT', state.now.pair, nowCurrent);
+                                log(`50% profit margin reached. Break-even stop locked at $${formatPrice(state.now.buyPrice)}.`);
                                 saveState();
+                            }
+
+                            if (state.now.halfwayHit && nowCurrent <= state.now.buyPrice && state.engineRunning && !isShifting && !isSyncingHistory) {
+                                log("Price dropped to entry. Executing break-even trailing stop!");
+                                triggerAlarm('BREAK_EVEN', state.now.pair, nowCurrent);
+                                if (timerInterval) clearInterval(timerInterval);
+                                isShifting = true;
+                                triggerChainShift().finally(() => { isShifting = false; });
+                                return;
                             }
 
                             if (nowCurrent >= state.now.sellTarget && state.engineRunning && !isShifting && !isSyncingHistory) {
@@ -1162,6 +1077,7 @@
                                     state.now.expectedGain += 0.01;
                                     state.now.sellTarget = state.now.buyPrice * (1 + state.now.expectedGain);
                                     state.targetSellTime += 5 * 60 * 1000; 
+                                    state.now.halfwayHit = false; 
                                     
                                     document.getElementById('lblNowSell').innerText = formatPrice(state.now.sellTarget);
                                     updateExpectedProfitDisplay();
@@ -1231,18 +1147,8 @@
             let totalSeconds = safeBlocks * interval * 60; 
             
             let projectedEnd = Date.now() + (totalSeconds * 1000);
-            let msToMidnight = new Date().setHours(24,0,0,0) - Date.now();
-            
-            if ((totalSeconds * 1000) >= msToMidnight) {
-                state.standbyForMidnight = true;
-                log("Trade lockout: Projected time crosses midnight. Engine standing by for reset.");
-                document.getElementById('lblCountdown').classList.add('standby-alert');
-                document.getElementById('lblCountdown').innerText = "STANDBY";
-            } else {
-                state.targetSellTime = projectedEnd;
-                document.getElementById('lblCountdown').classList.remove('standby-alert');
-                startCountdownVisuals();
-            }
+            state.targetSellTime = projectedEnd;
+            startCountdownVisuals();
             saveState();
         }
 
@@ -1251,7 +1157,6 @@
             updateTimerDisplay();
 
             timerInterval = setInterval(() => {
-                if (state.standbyForMidnight) return;
                 updateTimerDisplay();
                 if(Date.now() >= state.targetSellTime && document.visibilityState === "visible" && !isShifting && state.now.pair) {
                     clearInterval(timerInterval);
