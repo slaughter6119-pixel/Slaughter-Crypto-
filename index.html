@@ -732,8 +732,18 @@
                 let activeCoins = [];
                 for (let pair of allPairs) {
                     if (pair.endsWith("USD") || pair.endsWith("USDT")) {
-                        let trades24h = parseInt(tickerJson.result[pair].t[1]);
-                        activeCoins.push({ pair: pair, trades: trades24h || 0 });
+                        let baseName = cleanName(pair);
+                        if (['USDT', 'USDC', 'DAI', 'USDTZ', 'USDCZ', 'TUSD', 'USDD'].includes(baseName)) continue;
+                        if (state.cooldowns && state.cooldowns[baseName] && Date.now() < state.cooldowns[baseName]) continue;
+
+                        let data = tickerJson.result[pair];
+                        let trades24h = parseInt(data.t[1] || 0);
+                        let todayOpen = parseFloat(data.o || 0);
+                        let currentPrice = parseFloat(data.c[0] || 0);
+                        
+                        if (trades24h > 100 && currentPrice > (todayOpen * 1.005)) {
+                            activeCoins.push({ pair: pair, trades: trades24h });
+                        }
                     }
                 }
 
@@ -743,13 +753,7 @@
 
                 for(let pair of topTargets) {
                     let baseName = cleanName(pair);
-                    
-                    if (['USDT', 'USDC', 'DAI', 'USDTZ', 'USDCZ', 'TUSD', 'USDD'].includes(baseName)) continue;
                     if(seenBases.has(baseName)) continue; 
-
-                    if (state.cooldowns && state.cooldowns[baseName] && Date.now() < state.cooldowns[baseName]) {
-                        continue; 
-                    }
 
                     try {
                         await new Promise(resolve => setTimeout(resolve, 1000)); 
@@ -873,7 +877,7 @@
                 state.hunt.intervalIdx++;
                 if (state.hunt.intervalIdx >= SCAN_INTERVALS.length) {
                     state.hunt.intervalIdx = 0;
-                    state.hunt.strictness = Math.max(0.90, state.hunt.strictness - 0.01);
+                    state.hunt.strictness = Math.max(0.70, state.hunt.strictness - 0.05);
                 }
                 log("Market poor. Adjusting depth parameters. Rescanning in 15s...");
                 if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
@@ -914,7 +918,7 @@
                 state.hunt.intervalIdx++;
                 if (state.hunt.intervalIdx >= SCAN_INTERVALS.length) {
                     state.hunt.intervalIdx = 0;
-                    state.hunt.strictness = Math.max(0.90, state.hunt.strictness - 0.01);
+                    state.hunt.strictness = Math.max(0.70, state.hunt.strictness - 0.05);
                 }
                 log("Market poor. Adjusting depth parameters. Rescanning in 15s...");
                 if(scanRetryTimeout) clearTimeout(scanRetryTimeout);
